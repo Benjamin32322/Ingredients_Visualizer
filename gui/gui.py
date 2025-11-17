@@ -65,7 +65,7 @@ class GUI(tk.Tk):
     # ----------------- Plan-Güte-Ansicht (dein bisheriges GUI) -----------------
     def build_planquality_widgets(self):
         # Alles wie vorher, aber mit parent = self.planquality_frame
-        self.label = ttk.Label(self.planquality_frame, text="Welcome to the Ingredients Visualizer!")
+        self.label = ttk.Label(self.planquality_frame, text="Plan Güte Ansicht")
 
         # 👉 Back-Button hier hinzufügen
         self.back_btn = ttk.Button(
