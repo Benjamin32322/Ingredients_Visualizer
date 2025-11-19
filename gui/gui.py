@@ -158,6 +158,34 @@ class GUI(tk.Tk):
         self.button.pack(pady=10)
 
 # --------------------------------------------------------------------------------------------
+    def open_detail_view(self, row_values):
+        """
+        row_values ist ein Tupel/List mit allen Spaltenwerten der geklickten Zeile.
+        Beispiel: (pg_name, cf, cp_name, avg_lf, median_lf, max_lf, cnt)
+        """
+        print("Detail-View für:", row_values)
+
+        # Beispiel: wir nehmen pg_name und cp_name als Schlüssel für Detail-Query
+        pg_name = row_values[0]
+        cp_name = row_values[2]
+
+        # Filter für Detail-SQL bauen (nur als Beispiel)
+        pg_filter = build_filter("pg_name", [pg_name])
+        cp_filter = build_filter("cp_name", [cp_name])
+        join_filter = build_filter("bpi_cf_join_bundle",  )
+
+        # z.B. eine zweite SQL-Abfrage (Query 2) mit zusätzlichen Details
+        columns2, result2 = execute_query(
+            2,
+            filters={
+                "PG_FILTER": pg_filter,
+                "CP_FILTER": cp_filter,
+                "BPI_CF_JOIN_BUNDLE_FILTER": join_filter,
+            }
+        )
+
+        # Ergebnis wieder in einem neuen Treeview-Fenster anzeigen
+        plot_treeview(columns2, result2)
 
     def on_execute(self):
         
@@ -168,6 +196,7 @@ class GUI(tk.Tk):
         pg_filter = build_filter("pg_name", selected_pg)
         cp_filter = build_filter("cp_name", selected_cp)
         cf_filter = build_cost_filters(selected_cf)
+        
         filters = {
             "PG_FILTER": pg_filter,
             "CP_FILTER": cp_filter

@@ -1,4 +1,3 @@
-# multiSelect.py
 import tkinter as tk
 from tkinter import ttk
 
@@ -8,10 +7,9 @@ class PopoverMultiSelect(ttk.Frame):
     Dropdown-ähnliches Multi-Select mit Popover+Listbox.
 
     Features:
-    - Spezieller Eintrag:
-        [0] "No selection"  -> löscht Auswahl SOFORT (kein OK nötig), Header = Start-Header
-        [1..] eigentliche Items
-    - get_selected() -> Liste gewählter Items (Strings, ohne "No selection").
+    - Button "No selection" -> löscht Auswahl SOFORT (kein OK nötig), Header = Start-Header
+    - Listbox zeigt nur die eigentlichen Items
+    - get_selected() -> Liste gewählter Items (Strings).
     - set_selected(values | "No selection")
     """
     def __init__(self, master, items, header="Select…", all_label="All",
@@ -78,6 +76,12 @@ class PopoverMultiSelect(ttk.Frame):
         else:
             self._var.set(f"{n} selected")
 
+    def _no_selection_and_close(self):
+        """Handler für den 'No selection'-Button."""
+        self._selection.clear()
+        self._update_button_text()
+        self._close()
+
     def open_popover(self):
         if self._top and tk.Toplevel.winfo_exists(self._top):
             return  # schon offen
@@ -112,20 +116,22 @@ class PopoverMultiSelect(ttk.Frame):
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(0, weight=1)
 
-        # Buttons
+        # Buttons (OK, Cancel, No selection)
         btns = ttk.Frame(frame)
         btns.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+
         ttk.Button(btns, text="OK", command=self._apply_and_close).pack(side="right")
         ttk.Button(btns, text="Cancel", command=self._close).pack(side="right", padx=(0, 6))
+        ttk.Button(btns, text=self._no_label,
+                   command=self._no_selection_and_close).pack(side="right", padx=(0, 6))
 
-        # Inhalte einfüllen: "No selection" + Items
-        self._listbox.insert("end", self._no_label)   # Index 0
+        # Inhalte einfüllen: nur Items
         for it in self._items:
-            self._listbox.insert("end", it)           # ab Index 1
+            self._listbox.insert("end", it)
 
         # aktuelle Auswahl markieren
         if self._selection:
-            for idx, it in enumerate(self._items, start=1):  # +1 wegen "No selection"
+            for idx, it in enumerate(self._items, start=0):
                 if it in self._selection:
                     self._listbox.selection_set(idx)
 
@@ -143,20 +149,9 @@ class PopoverMultiSelect(ttk.Frame):
         self._top.update_idletasks()
 
     def _on_listbox_select(self, _evt=None):
-        sel = self._listbox.curselection()
-        if not sel:
-            return
-
-        # Index 0 = "No selection"
-        if 0 in sel:
-            self._selection.clear()
-            self._update_button_text()
-            self._close()
-            return
-
-        # sonst nur Items (Index >= 1)
-        # "No selection" darf nicht parallel aktiv sein
-        self._listbox.selection_clear(0)
+        # Aktuell kein Spezialverhalten nötig,
+        # aber Hook bleibt für spätere Logik
+        return
 
     def _apply_and_close(self):
         if not (self._top and tk.Toplevel.winfo_exists(self._top)):
@@ -166,9 +161,9 @@ class PopoverMultiSelect(ttk.Frame):
         if not sel_idx:
             self._selection.clear()
         else:
-            # konkrete Auswahl, Indizes >= 1 sind Items
+            # Alle selektierten Items übernehmen
             self._selection = {
-                self._listbox.get(i) for i in sel_idx if i >= 1
+                self._listbox.get(i) for i in sel_idx
             }
 
         self._update_button_text()
@@ -295,6 +290,20 @@ class MultiSelectPlus(PopoverMultiSelect):
         else:
             self._var.set(f"{total_selected} selected")
 
+    def _clear_all_and_close(self):
+        """Handler für 'No selection' im MultiSelectPlus-Popover."""
+        # alle internen Selektionen löschen
+        for spec in self._child_specs:
+            spec["selection"].clear()
+
+        # falls Kinder-Widgets existieren, diese ebenfalls leeren
+        if self._child_widgets:
+            for child in self._child_widgets:
+                child.set_selected([])
+
+        self._update_button_text()
+        self._close()
+
     def open_popover(self):
         if self._top and tk.Toplevel.winfo_exists(self._top):
             return
@@ -335,8 +344,11 @@ class MultiSelectPlus(PopoverMultiSelect):
 
         btns = ttk.Frame(frame)
         btns.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+
         ttk.Button(btns, text="OK", command=self._apply_and_close).pack(side="right")
         ttk.Button(btns, text="Cancel", command=self._close).pack(side="right", padx=(0, 6))
+        ttk.Button(btns, text=self._no_label,
+                   command=self._clear_all_and_close).pack(side="right", padx=(0, 6))
 
         self._top.bind("<Escape>", lambda e: self._close())
         self._top.bind("<FocusOut>", lambda e: self._apply_and_close())

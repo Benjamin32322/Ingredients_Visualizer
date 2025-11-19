@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 import pandas as pd
 from tkinter import filedialog, messagebox
+from db.dbHandler import build_filter, execute_query
+
 
 def plot_treeview(columns, data):
     plot_window = tk.Toplevel()
@@ -51,5 +53,38 @@ def plot_treeview(columns, data):
     tree.pack(side="left", fill="both", expand=True)
     scroll.pack(side="right", fill="y")
 
+   
+    def handle_row_double_click():
+        item_id = tree.focus()
+        if not item_id:
+            return
 
-    plot_window.mainloop()
+         # Werte der Zeile
+        values = tree.item(item_id, "values")
+
+        # Spaltennamen aus tree["columns"]
+        columns = tree["columns"]
+
+        # Dict erzeugen
+        row_dict = dict(zip(columns, values))
+
+    
+        return row_dict
+    
+    def open_detail_view(event):
+        
+        dict_row = handle_row_double_click()
+
+        filters = {}
+
+        for key, value in dict_row.items():
+            filters.update({key.upper() + "_FILTER": build_filter(key, value)})
+            print(f"{key.upper() + "_FILTER"}: {build_filter(key, value)}")
+        
+        # z.B. eine zweite SQL-Abfrage (Query 2) mit zusätzlichen Details
+        columns2, result2 = execute_query(2, filters=filters)
+        # Ergebnis wieder in einem neuen Treeview-Fenster anzeigen
+        plot_treeview(columns2, result2)
+
+
+    tree.bind("<Double-1>", open_detail_view)
