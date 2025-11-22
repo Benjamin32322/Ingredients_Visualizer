@@ -1,9 +1,5 @@
 # dbHandler.py
-
-#TODO: Pfade anpassen
-DB_PATH = "/Users/benjaminsander/Library/Mobile Documents/com~apple~CloudDocs/B.Sc. Wirtschaftsinformatik/semester_7/Bachelorarbeit/pgb_job_0.db"
-SQL_PATH_1 = "/Users/benjaminsander/Library/Mobile Documents/com~apple~CloudDocs/B.Sc. Wirtschaftsinformatik/semester_7/Bachelorarbeit/Ingredients_Visualizer/sql/Plangüte_Exp.sql"
-SQL_PATH_2 = "/Users/benjaminsander/Library/Mobile Documents/com~apple~CloudDocs/B.Sc. Wirtschaftsinformatik/semester_7/Bachelorarbeit/Ingredients_Visualizer/sql/Pläne_Plangüte.sql"
+from config import DB_PATH, SQL_PATH_1, SQL_PATH_2, SQL_PATH_3, SQL_PATH_4
 
 import duckdb
 
@@ -53,6 +49,43 @@ def execute_query(file_nr,filters=None):
                 return columns, result
             except Exception as ex:
                 raise ex
+        case 3:
+            try:
+                sql = open(SQL_PATH_3).read()
+                sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
+                sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
+                sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
+                sql = sql.replace("{CF_MAT_FILTER}", filters.get("BPI_CF_MAT_FILTER"))
+                sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
+                sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
+                sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+
+                columns = [desc[0] for desc in connect_to_db().execute(sql).description]
+                result = connect_to_db().execute(sql).fetchall()
+
+                return columns, result
+            
+            except Exception as ex:
+                raise ex
+        
+        case 4:
+            try: 
+                sql = open(SQL_PATH_4).read()
+                sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
+                sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
+                sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
+                sql = sql.replace("{CF_MAT_FILTER}", filters.get("BPI_CF_MAT_FILTER"))
+                sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
+                sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
+                sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+
+                columns = [desc[0] for desc in connect_to_db().execute(sql).description]
+                result = connect_to_db().execute(sql).fetchall()
+
+                return columns, result
+            except Exception as ex:
+                raise ex
+
         case _:
             return None
 

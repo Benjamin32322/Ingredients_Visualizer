@@ -1,4 +1,7 @@
-SELECT ps_plan, ps_plan_log, ps_plan_phys
+-- CardinalityEstimator.sql
+
+SELECT ps_sum_card_pc, ps_max_card_pc, ps_sum_card_build, 
+ps_max_card_build, ps_sum_card_probe, ps_max_card_probe
 
 FROM plan_summary ps
 
@@ -15,4 +18,7 @@ WHERE 1=1
   {CF_CONCAT_FILTER}
   {CF_HOST_ID_FILTER}
   {PG_NAME_FILTER}
-  {CP_NAME_FILTER};
+  {CP_NAME_FILTER}
+
+  GROUP BY ps_sum_card_pc, ps_max_card_pc, ps_sum_card_build, ps_max_card_build, ps_sum_card_probe, ps_max_card_probe;
+  

@@ -1,4 +1,11 @@
-SELECT ps_plan, ps_plan_log, ps_plan_phys
+-- CostFunction.sql
+
+SELECT ps_qerr_cost_pg, ps_qerr_opt_cost_pg,
+
+  ROUND(AVG(ps_qerr_cost_pg), 4) AS avg_qerr,
+  ROUND(MEDIAN(ps_qerr_cost_pg), 4) AS median_qerr,
+  ROUND(MAX(ps_qerr_cost_pg), 4) AS max_qerr,
+  COUNT(*) AS cnt
 
 FROM plan_summary ps
 
@@ -15,4 +22,7 @@ WHERE 1=1
   {CF_CONCAT_FILTER}
   {CF_HOST_ID_FILTER}
   {PG_NAME_FILTER}
-  {CP_NAME_FILTER};
+  {CP_NAME_FILTER}
+
+GROUP BY ps_qerr_cost_pg, ps_qerr_opt_cost_pg
+ORDER BY ps_qerr_cost_pg DESC;

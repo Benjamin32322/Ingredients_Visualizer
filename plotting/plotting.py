@@ -5,6 +5,7 @@ import pandas as pd
 from tkinter import filedialog, messagebox
 from db.dbHandler import build_filter, execute_query
 
+# ----------------------------- PLOTTING TREEVIEW & DETAIL-TREEVIEW -------------------------------------
 
 def plot_treeview(columns, data):
     plot_window = tk.Toplevel()
@@ -62,10 +63,9 @@ def plot_treeview(columns, data):
          # Werte der Zeile
         values = tree.item(item_id, "values")
 
-        # Spaltennamen aus tree["columns"]
+        # Spaltennamen
         columns = tree["columns"]
 
-        # Dict erzeugen
         row_dict = dict(zip(columns, values))
 
     
@@ -81,9 +81,9 @@ def plot_treeview(columns, data):
             filters.update({key.upper() + "_FILTER": build_filter(key, value)})
             print(f"{key.upper() + "_FILTER"}: {build_filter(key, value)}")
         
-        # z.B. eine zweite SQL-Abfrage (Query 2) mit zusätzlichen Details
+        
         columns2, result2 = execute_query(2, filters=filters)
-        # Ergebnis wieder in einem neuen Treeview-Fenster anzeigen
+    
         plot_treeview(columns2, result2)
 
 

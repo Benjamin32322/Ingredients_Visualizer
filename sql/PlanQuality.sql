@@ -1,4 +1,4 @@
--- Plangüte.sql
+-- PlanQuality.sql
 
 SELECT 
   pg_name,
