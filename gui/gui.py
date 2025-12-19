@@ -10,51 +10,37 @@ from plotting.plotting import plot_treeview
 class GUI(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Ingredients Visualizer")
-        # Make the window fullscreen
+        self.title("Ingredients Visualizer - Advanced Database Query Interface")
+        
+        # Configure window
         self.attributes("-fullscreen", True)
-        # Allow exiting fullscreen with Esc
         self.bind("<Escape>", lambda e: self.attributes("-fullscreen", False))
-        # define the window size to use when not fullscreen and center it
-        width, height = 1200, 700
+        
+        # Define window size for non-fullscreen mode
+        width, height = 1400, 900
         x = (self.winfo_screenwidth() - width) // 2
         y = (self.winfo_screenheight() - height) // 2
         self._default_geometry = f"{width}x{height}+{x}+{y}"
-        # ensure geometry is set (will take effect when exiting fullscreen)
         self.geometry(self._default_geometry)
 
-        # bind Escape to exit fullscreen and restore the desired size
+        # Bind Escape to exit fullscreen and restore size
         def _exit_fullscreen(event=None):
             self.attributes("-fullscreen", False)
             self.geometry(self._default_geometry)
-
         self.bind("<Escape>", _exit_fullscreen)
 
-       
-        self.top_level_frame = ttk.Frame(self)
-        self.top_level_frame.pack(fill="both", expand=True)
-
-         # Erstellen der Frames
-        self.first_frame = ttk.Frame(self.top_level_frame)
-        self.second_frame = ttk.Frame(self.top_level_frame)
-        self.third_frame = ttk.Frame(self.top_level_frame)
-
-
-        # Alle Frames initialisieren
-        # First-Frame
-        self.build_first_frame()
-        self.layout_first_frame()
-        # Second-Frame
-        self.build_second_frame()
-        self.layout_second_frame()
-        # Third-Frame
-        self.build_third_frame()
-        self.layout_third_frame()
-
-        # Beim Start wird der erste Frame angezeigt
-        self.show_all_frames()
+        # Configure modern styling
+        self.setup_styles()
         
-        # Initialize proper focus management
+        # Create main layout structure
+        self.create_layout_structure()
+        
+        # Build all components
+        self.build_header()
+        self.build_main_content()
+        self.build_footer()
+        
+        # Initialize focus management
         self.setup_focus_management()
 
     def setup_focus_management(self):
@@ -87,117 +73,470 @@ class GUI(tk.Tk):
         # Schedule the next check
         self.after(2000, self.periodic_focus_check)
 
-    # -------------------------- TOP-LEVEL FRAME -------------------------------------------------------------
+    def setup_styles(self):
+        """Configure modern styling for the application"""
+        self.style = ttk.Style()
+        
+        # Configure modern frame styles with borders
+        self.style.configure("Card.TFrame", 
+                           relief="solid", 
+                           borderwidth=1, 
+                           background="#f8f9fa")
+        
+        self.style.configure("Header.TFrame", 
+                           relief="solid", 
+                           borderwidth=2, 
+                           background="#2c3e50")
+        
+        self.style.configure("Footer.TFrame", 
+                           relief="solid", 
+                           borderwidth=1, 
+                           background="#34495e")
+        
+        # Configure label styles
+        self.style.configure("Header.TLabel", 
+                           background="#2c3e50", 
+                           foreground="white", 
+                           font=("Arial", 16, "bold"))
+        
+        self.style.configure("Title.TLabel", 
+                           font=("Arial", 12, "bold"), 
+                           foreground="#2c3e50")
+        
+        self.style.configure("Footer.TLabel", 
+                           background="#34495e", 
+                           foreground="white", 
+                           font=("Arial", 9))
+        
+        # Configure button styles
+        self.style.configure("Action.TButton", 
+                           font=("Arial", 10, "bold"))
 
-    def build_top_level_frame(self):
-        pass # Implementation
+    def create_layout_structure(self):
+        """Create the main layout structure with header, content area, and footer"""
+        # Main container
+        self.main_container = ttk.Frame(self)
+        self.main_container.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Header section
+        self.header_frame = ttk.Frame(self.main_container, style="Header.TFrame")
+        self.header_frame.pack(fill="x", pady=(0, 10))
+        
+        # Main content area with grid layout
+        self.content_frame = ttk.Frame(self.main_container)
+        self.content_frame.pack(fill="both", expand=True, pady=(0, 10))
+        
+        # Configure grid weights for responsive layout
+        self.content_frame.grid_columnconfigure(0, weight=1)
+        self.content_frame.grid_columnconfigure(1, weight=1)
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_rowconfigure(1, weight=1)
+        
+        # Footer section
+        self.footer_frame = ttk.Frame(self.main_container, style="Footer.TFrame")
+        self.footer_frame.pack(fill="x")
 
-    def layout_top_level_frame(self):
-        pass  # Implementation
+    def build_header(self):
+        """Build the application header"""
+        # Main title
+        self.header_title = ttk.Label(
+            self.header_frame,
+            text="🗂️ Ingredients Visualizer",
+            style="Header.TLabel"
+        )
+        self.header_title.pack(side="left", padx=20, pady=15)
+        
+        # Subtitle
+        self.header_subtitle = ttk.Label(
+            self.header_frame,
+            text="Advanced Database Query and Visualization Tool",
+            style="Header.TLabel",
+            font=("Arial", 12)
+        )
+        self.header_subtitle.pack(side="left", padx=(0, 20), pady=15)
+        
+        # Exit fullscreen button
+        self.exit_fullscreen_btn = ttk.Button(
+            self.header_frame,
+            text="Exit Fullscreen (ESC)",
+            command=lambda: self.attributes("-fullscreen", False)
+        )
+        self.exit_fullscreen_btn.pack(side="right", padx=20, pady=10)
+
+    def build_main_content(self):
+        """Build the main content area with three organized sections"""
+        # Create the three main sections with cards
+        self.create_query_configuration_section()
+        self.create_analysis_tools_section()
+        self.create_detail_filters_section()
+        self.create_results_section()
+
+    def create_query_configuration_section(self):
+        """Create the query configuration section (top-left)"""
+        self.first_frame = ttk.LabelFrame(
+            self.content_frame,
+            text="📊 Query Configuration",
+            style="Card.TFrame",
+            padding=20
+        )
+        self.first_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5), pady=(0, 5))
+        
+        self.build_first_frame()
+
+    def create_analysis_tools_section(self):
+        """Create the analysis tools section (top-right)"""
+        self.second_frame = ttk.LabelFrame(
+            self.content_frame,
+            text="🔍 Analysis Tools",
+            style="Card.TFrame",
+            padding=20
+        )
+        self.second_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 5))
+        
+        self.build_second_frame()
+
+    def create_detail_filters_section(self):
+        """Create the detail filters section (bottom-left)"""
+        self.third_frame = ttk.LabelFrame(
+            self.content_frame,
+            text="🔧 Detail Filters",
+            style="Card.TFrame",
+            padding=20
+        )
+        self.third_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(5, 0))
+        
+        self.build_third_frame()
+
+    def create_results_section(self):
+        """Create the results information section (bottom-right)"""
+        self.results_frame = ttk.LabelFrame(
+            self.content_frame,
+            text="📈 Results & Information",
+            style="Card.TFrame",
+            padding=20
+        )
+        self.results_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
+        
+        self.build_results_info_section()
+
+    def build_footer(self):
+        """Build the application footer"""
+        # Status information
+        self.status_label = ttk.Label(
+            self.footer_frame,
+            text="Ready - Select your query parameters and analysis tools",
+            style="Footer.TLabel"
+        )
+        self.status_label.pack(side="left", padx=20, pady=10)
+        
+        # Version and credits
+        self.credits_label = ttk.Label(
+            self.footer_frame,
+            text="© 2025 Ingredients Visualizer v1.0 | Advanced Query Interface",
+            style="Footer.TLabel"
+        )
+        self.credits_label.pack(side="right", padx=20, pady=10)
     
-    
-    # ----------------- First-Frame -----------------------------------------------------------------
+    # ----------------- Query Configuration Section -----------------------------------------------------------------
     
     def build_first_frame(self):
+        """Build the query configuration section with enhanced layout"""
         
-        self.welcome_label = ttk.Label(self.first_frame, text="Welcome to the Ingredients Visualizer!")
+        # Section description
+        description_label = ttk.Label(
+            self.first_frame, 
+            text="Configure your database query parameters:",
+            style="Title.TLabel"
+        )
+        description_label.pack(anchor="w", pady=(0, 15))
 
-        self.execute_button = ttk.Button(self.first_frame, text="Execute", command=self.on_execute)
-
+        # Plan Generator section
+        pg_label = ttk.Label(self.first_frame, text="🎯 Plan Generator:", font=("Arial", 10, "bold"))
+        pg_label.pack(anchor="w", pady=(5, 2))
+        
         self.ms_plan_generator = PopoverMultiSelect(
             self.first_frame,
-            header="Plan Generator",
-            items=get_values_for_dropdown("plan_generator", "pg_name")
+            header="Select Plan Generator",
+            items=get_values_for_dropdown("plan_generator", "pg_name"),
+            width=35
         )
+        self.ms_plan_generator.pack(fill="x", pady=(0, 10))
+
+        # Cardinality Provider section
+        cp_label = ttk.Label(self.first_frame, text="📊 Cardinality Provider:", font=("Arial", 10, "bold"))
+        cp_label.pack(anchor="w", pady=(5, 2))
+        
         self.ms_cardinality_provider = PopoverMultiSelect(
             self.first_frame,
-            header="Cardinality Provider",
-            items=get_values_for_dropdown("card_provider", "cp_name")
+            header="Select Cardinality Provider",
+            items=get_values_for_dropdown("card_provider", "cp_name"),
+            width=35
         )
+        self.ms_cardinality_provider.pack(fill="x", pady=(0, 10))
+
+        # Cost Function section
+        cf_label = ttk.Label(self.first_frame, text="💰 Cost Function Parameters:", font=("Arial", 10, "bold"))
+        cf_label.pack(anchor="w", pady=(5, 2))
 
         self.ms_cf_mat = PopoverMultiSelect(
             self.first_frame,
             header="bpi_cf_mat",
-            items=get_values_for_dropdown("build_plan_instance", "bpi_cf_mat")
+            items=get_values_for_dropdown("build_plan_instance", "bpi_cf_mat"),
+            width=35
         )
+        
         self.ms_cf_concat = PopoverMultiSelect(
             self.first_frame,
             header="bpi_cf_concat",
-            items=get_values_for_dropdown("build_plan_instance", "bpi_cf_concat")
+            items=get_values_for_dropdown("build_plan_instance", "bpi_cf_concat"),
+            width=35
         )
+        
         self.ms_cf_join_bundle = PopoverMultiSelect(
             self.first_frame,
             header="bpi_cf_join_bundle",
-            items=get_values_for_dropdown("build_plan_instance", "bpi_cf_join_bundle")
+            items=get_values_for_dropdown("build_plan_instance", "bpi_cf_join_bundle"),
+            width=35
         )
+        
         self.ms_cf_bpc = PopoverMultiSelect(
             self.first_frame,
             header="bpc_name",
-            items=get_values_for_dropdown("build_plan_class", "bpc_name")
+            items=get_values_for_dropdown("build_plan_class", "bpc_name"),
+            width=35
         )
+        
         self.ms_cf_host_id = PopoverMultiSelect(
             self.first_frame,
             header="wp_cf_host_id",
-            items=get_values_for_dropdown("work_package", "wp_cf_host_id")
+            items=get_values_for_dropdown("work_package", "wp_cf_host_id"),
+            width=35
         )
 
         self.msplus_cost_function = MultiSelectPlus(
             self.first_frame,
-            header="Cost Function",
+            header="Advanced Cost Function Configuration",
             items=[
                 self.ms_cf_mat,
                 self.ms_cf_concat,
                 self.ms_cf_join_bundle,
                 self.ms_cf_bpc,
                 self.ms_cf_host_id
-            ]
+            ],
+            width=35
         )
-    
-    def layout_first_frame(self):
+        self.msplus_cost_function.pack(fill="x", pady=(0, 15))
 
-        self.welcome_label.pack(pady=30)
-        self.ms_plan_generator.pack(pady=10)
-        self.ms_cardinality_provider.pack(pady=10)
-        self.msplus_cost_function.pack(pady=10)
-        self.execute_button.pack(pady=10)
-    
-    # Dummy-Funktion für Noch nicht implementierte Buttons & Frames
-    def show_message(self):
-        messagebox.showinfo("Information", "This is a sample GUI application.")
+        # Execute button
+        self.execute_button = ttk.Button(
+            self.first_frame, 
+            text="🚀 Execute Query", 
+            command=self.on_execute,
+            style="Action.TButton"
+        )
+        self.execute_button.pack(fill="x", pady=10)
 
-    # ----------------- Second-Frame -----------------------------------------------------------------------------
+    # ----------------- Analysis Tools Section -----------------------------------------------------------------------------
     
     def build_second_frame(self):
-        self.loss_factor_button = ttk.Button(
-            self.second_frame,
-            text = "Loss Factor",
-            command=self.on_execute
-        )
-
-        self.q_error_button = ttk.Button(
-            self.second_frame,
-            text= "q-Error",
-            command=self.execute_q_error
-        )
-
-        self.p_error_button = ttk.Button(
-            self.second_frame,
-            text= "p-Error",
-            command=self.execute_p_error
-        )
+        """Build the analysis tools section with enhanced layout"""
         
-    def layout_second_frame(self):
-        self.loss_factor_button.pack(pady=10)
-        self.q_error_button.pack(pady=10)
-        self.p_error_button.pack(pady=10)
+        # Section description
+        description_label = ttk.Label(
+            self.second_frame, 
+            text="Choose your analysis method:",
+            style="Title.TLabel"
+        )
+        description_label.pack(anchor="w", pady=(0, 15))
+        
+        # Analysis tools with descriptions
+        tools_frame = ttk.Frame(self.second_frame)
+        tools_frame.pack(fill="x")
+        
+        # Loss Factor Analysis
+        lf_frame = ttk.Frame(tools_frame)
+        lf_frame.pack(fill="x", pady=5)
+        
+        self.loss_factor_button = ttk.Button(
+            lf_frame,
+            text="📉 Loss Factor Analysis",
+            command=self.on_execute,
+            style="Action.TButton"
+        )
+        self.loss_factor_button.pack(fill="x")
+        
+        lf_desc = ttk.Label(
+            lf_frame,
+            text="Analyze loss factors in query execution plans",
+            font=("Arial", 9),
+            foreground="gray"
+        )
+        lf_desc.pack(anchor="w", pady=(2, 0))
 
+        # Q-Error Analysis
+        qe_frame = ttk.Frame(tools_frame)
+        qe_frame.pack(fill="x", pady=15)
+        
+        self.q_error_button = ttk.Button(
+            qe_frame,
+            text="📊 Q-Error Analysis",
+            command=self.execute_q_error,
+            style="Action.TButton"
+        )
+        self.q_error_button.pack(fill="x")
+        
+        qe_desc = ttk.Label(
+            qe_frame,
+            text="Examine cardinality estimation errors (Q-Error)",
+            font=("Arial", 9),
+            foreground="gray"
+        )
+        qe_desc.pack(anchor="w", pady=(2, 0))
 
-    
-    # ------------------------------ THIRD FRAME --------------------------------------------------------
+        # P-Error Analysis
+        pe_frame = ttk.Frame(tools_frame)
+        pe_frame.pack(fill="x", pady=5)
+        
+        self.p_error_button = ttk.Button(
+            pe_frame,
+            text="📈 P-Error Analysis",
+            command=self.execute_p_error,
+            style="Action.TButton"
+        )
+        self.p_error_button.pack(fill="x")
+        
+        pe_desc = ttk.Label(
+            pe_frame,
+            text="Analyze prediction errors in cost estimation",
+            font=("Arial", 9),
+            foreground="gray"
+        )
+        pe_desc.pack(anchor="w", pady=(2, 0))
+
+    # ------------------------------ Detail Filters Section --------------------------------------------------------
+
+    def build_third_frame(self):
+        """Build the detail filters section with enhanced layout"""
+        
+        # Section description
+        description_label = ttk.Label(
+            self.third_frame, 
+            text="Configure detailed result filters:",
+            style="Title.TLabel"
+        )
+        description_label.pack(anchor="w", pady=(0, 15))
+
+        # Filter type selection
+        filter_label = ttk.Label(self.third_frame, text="📊 Filter Metric:", font=("Arial", 10, "bold"))
+        filter_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_detail_view = PopoverMultiSelect(
+            self.third_frame,
+            header="Select Detail View Filter",
+            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"],
+            width=35
+        )
+        self.ms_detail_view.pack(fill="x", pady=(0, 10))
+
+        # Comparison type
+        comparison_label = ttk.Label(self.third_frame, text="🔍 Comparison Type:", font=("Arial", 10, "bold"))
+        comparison_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_filter_detail = PopoverMultiSelect(
+            self.third_frame,
+            header="Select Comparison Type",
+            items=["größer als", "kleiner als", "gleich", "zwischen"],
+            width=35
+        )
+        self.ms_filter_detail.pack(fill="x", pady=(0, 10))
+        
+        # Bind to selection changes to show/hide second entry
+        self.ms_filter_detail.button.configure(command=self.on_filter_detail_change)
+        
+        # Override the popover's close methods to restore Entry responsiveness
+        self._setup_popover_callbacks()
+
+        # Input values
+        input_label = ttk.Label(self.third_frame, text="🔢 Filter Value(s):", font=("Arial", 10, "bold"))
+        input_label.pack(anchor="w", pady=(5, 2))
+        
+        self.eingabe_detail = tk.StringVar()
+        self.eingabe_detail.trace_add("write", self.on_detail_input_change)
+
+        input_frame = ttk.Frame(self.third_frame)
+        input_frame.pack(fill="x", pady=(0, 10))
+        
+        self.eingabe_detail_entry = ttk.Entry(input_frame, textvariable=self.eingabe_detail)
+        self.eingabe_detail_entry.pack(fill="x")
+        
+        # Bind events to ensure Entry remains responsive
+        self.eingabe_detail_entry.bind("<Button-1>", self.on_entry_click)
+        self.eingabe_detail_entry.bind("<FocusIn>", self.on_entry_focus)
+        self.eingabe_detail_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
+        
+        # Create second entry for "zwischen" option but don't pack it yet
+        self.eingabe_detail_2 = ttk.Entry(input_frame)
+        self.eingabe_detail_2.bind("<Button-1>", self.on_entry_click)
+        self.eingabe_detail_2.bind("<FocusIn>", self.on_entry_focus)
+        self.eingabe_detail_2.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
+        
+        # Add a button to manually restore Entry responsiveness for testing
+        self.restore_button = ttk.Button(
+            self.third_frame,
+            text="🔧 Fix Entry Responsiveness",
+            command=self.force_entry_responsiveness
+        )
+        self.restore_button.pack(fill="x", pady=5)
+
+    def build_results_info_section(self):
+        """Build the results information section"""
+        # Section description
+        description_label = ttk.Label(
+            self.results_frame, 
+            text="Query results and statistics:",
+            style="Title.TLabel"
+        )
+        description_label.pack(anchor="w", pady=(0, 15))
+        
+        # Results summary
+        self.results_text = tk.Text(
+            self.results_frame, 
+            height=10, 
+            wrap="word",
+            font=("Courier", 10),
+            state="disabled"
+        )
+        self.results_text.pack(fill="both", expand=True, pady=(0, 10))
+        
+        # Scrollbar for results
+        scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_text.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.results_text.config(yscrollcommand=scrollbar.set)
+        
+        # Clear results button
+        self.clear_results_button = ttk.Button(
+            self.results_frame,
+            text="🗑️ Clear Results",
+            command=self.clear_results
+        )
+        self.clear_results_button.pack(fill="x")
 
     def on_detail_input_change(self, *args):
         current_text = self.eingabe_detail.get()
         print("Detail Input Changed:", current_text)
+        self.update_status(f"Filter value updated: {current_text}")
+
+    def clear_results(self):
+        """Clear the results display"""
+        self.results_text.config(state="normal")
+        self.results_text.delete(1.0, tk.END)
+        self.results_text.config(state="disabled")
+        self.update_status("Results cleared")
+
+    def update_status(self, message):
+        """Update the status message in the footer"""
+        if hasattr(self, 'status_label'):
+            self.status_label.config(text=message)
     
     def on_entry_focus(self, event):
         """Handle focus events for Entry widgets to ensure they remain responsive"""
@@ -235,18 +574,39 @@ class GUI(tk.Tk):
         return "break"
     
     def build_third_frame(self):
+        """Build the detail filters section with enhanced layout"""
+        
+        # Section description
+        description_label = ttk.Label(
+            self.third_frame, 
+            text="Configure detailed result filters:",
+            style="Title.TLabel"
+        )
+        description_label.pack(anchor="w", pady=(0, 15))
+
+        # Filter type selection
+        filter_label = ttk.Label(self.third_frame, text="📊 Filter Metric:", font=("Arial", 10, "bold"))
+        filter_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_detail_view = PopoverMultiSelect(
             self.third_frame,
-            header="Detail View Filter",
-            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"] 
+            header="Select Detail View Filter",
+            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"],
+            width=35
         )
+        self.ms_detail_view.pack(fill="x", pady=(0, 10))
 
+        # Comparison type
+        comparison_label = ttk.Label(self.third_frame, text="🔍 Comparison Type:", font=("Arial", 10, "bold"))
+        comparison_label.pack(anchor="w", pady=(5, 2))
+        
         self.ms_filter_detail = PopoverMultiSelect(
             self.third_frame,
-            header="Detail View Größe",
-            items=["größer als", "kleiner als", "gleich", "zwischen"]
+            header="Select Comparison Type",
+            items=["größer als", "kleiner als", "gleich", "zwischen"],
+            width=35
         )
+        self.ms_filter_detail.pack(fill="x", pady=(0, 10))
         
         # Bind to selection changes to show/hide second entry
         self.ms_filter_detail.button.configure(command=self.on_filter_detail_change)
@@ -254,10 +614,18 @@ class GUI(tk.Tk):
         # Override the popover's close methods to restore Entry responsiveness
         self._setup_popover_callbacks()
 
+        # Input values
+        input_label = ttk.Label(self.third_frame, text="🔢 Filter Value(s):", font=("Arial", 10, "bold"))
+        input_label.pack(anchor="w", pady=(5, 2))
+        
         self.eingabe_detail = tk.StringVar()
         self.eingabe_detail.trace_add("write", self.on_detail_input_change)
 
-        self.eingabe_detail_entry = ttk.Entry(self.third_frame, textvariable=self.eingabe_detail)
+        input_frame = ttk.Frame(self.third_frame)
+        input_frame.pack(fill="x", pady=(0, 10))
+        
+        self.eingabe_detail_entry = ttk.Entry(input_frame, textvariable=self.eingabe_detail)
+        self.eingabe_detail_entry.pack(fill="x")
         
         # Bind events to ensure Entry remains responsive
         self.eingabe_detail_entry.bind("<Button-1>", self.on_entry_click)
@@ -265,16 +633,21 @@ class GUI(tk.Tk):
         self.eingabe_detail_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
         # Create second entry for "zwischen" option but don't pack it yet
-        self.eingabe_detail_2 = ttk.Entry(self.third_frame)
+        self.eingabe_detail_2 = ttk.Entry(input_frame)
         self.eingabe_detail_2.bind("<Button-1>", self.on_entry_click)
         self.eingabe_detail_2.bind("<FocusIn>", self.on_entry_focus)
         self.eingabe_detail_2.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
+        # Add a button to manually restore Entry responsiveness for testing
+        self.restore_button = ttk.Button(
+            self.third_frame,
+            text="🔧 Fix Entry Responsiveness",
+            command=self.force_entry_responsiveness
+        )
+        self.restore_button.pack(fill="x", pady=5)
         
-    def layout_third_frame(self):
-        self.ms_detail_view.pack(pady=10)
-        self.ms_filter_detail.pack(pady=10)
-        self.eingabe_detail_entry.pack(pady=10)
+        
+    # Layout is now handled within build_third_frame method
 
         
     def ensure_entry_focus(self, event):
@@ -464,7 +837,8 @@ class GUI(tk.Tk):
 
         plot_treeview(columns, result)
         
-        # Restore focus to Entry widgets after execution
+        # Update status and restore focus
+        self.update_status(f"Loss Factor query executed - {len(result)} results found")
         self.after(100, self.restore_entry_focus)
     
     def execute_q_error(self):
@@ -485,7 +859,8 @@ class GUI(tk.Tk):
 
         plot_treeview(columns, result)
         
-        # Restore focus to Entry widgets after execution
+        # Update status and restore focus
+        self.update_status(f"Q-Error analysis executed - {len(result)} results found")
         self.after(100, self.restore_entry_focus)
 
     def execute_p_error(self):
@@ -506,7 +881,8 @@ class GUI(tk.Tk):
 
         plot_treeview(columns, result)
         
-        # Restore focus to Entry widgets after execution
+        # Update status and restore focus
+        self.update_status(f"P-Error analysis executed - {len(result)} results found")
         self.after(100, self.restore_entry_focus)
     
     def restore_entry_focus(self):
@@ -529,13 +905,6 @@ class GUI(tk.Tk):
             # Handle case where widgets have been destroyed
             pass
     
-# --------------------------- WECHSEL ZWISCHEN DEN FRAMES ----------------------------------------------------------
-    
-    def show_all_frames(self):
-        self.first_frame.pack(fill="x", padx=5, pady=5)
-        self.second_frame.pack(fill="x", padx=5, pady=5)
-        self.third_frame.pack(fill="x", padx=5, pady=5)
-
 # ------------------------ RUN-METHODE --------------------------------------------------------------
     def run(self):
         self.mainloop()
