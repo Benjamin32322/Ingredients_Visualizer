@@ -3,6 +3,7 @@ from tkinter import messagebox
 from tkinter import ttk
 from db.dbHandler import get_values_for_dropdown, build_filter, build_cost_filters, execute_query
 from gui.multiSelect import PopoverMultiSelect, MultiSelectPlus
+from gui.style import setup_application_styles
 from plotting.plotting import plot_treeview
 
 
@@ -75,42 +76,7 @@ class GUI(tk.Tk):
 
     def setup_styles(self):
         """Configure modern styling for the application"""
-        self.style = ttk.Style()
-        
-        # Configure modern frame styles with borders
-        self.style.configure("Card.TFrame", 
-                           relief="solid", 
-                           borderwidth=1, 
-                           background="#f8f9fa")
-        
-        self.style.configure("Header.TFrame", 
-                           relief="solid", 
-                           borderwidth=2, 
-                           background="#2c3e50")
-        
-        self.style.configure("Footer.TFrame", 
-                           relief="solid", 
-                           borderwidth=1, 
-                           background="#34495e")
-        
-        # Configure label styles
-        self.style.configure("Header.TLabel", 
-                           background="#2c3e50", 
-                           foreground="white", 
-                           font=("Arial", 16, "bold"))
-        
-        self.style.configure("Title.TLabel", 
-                           font=("Arial", 12, "bold"), 
-                           foreground="#2c3e50")
-        
-        self.style.configure("Footer.TLabel", 
-                           background="#34495e", 
-                           foreground="white", 
-                           font=("Arial", 9))
-        
-        # Configure button styles
-        self.style.configure("Action.TButton", 
-                           font=("Arial", 10, "bold"))
+        self.style = setup_application_styles(self)
 
     def create_layout_structure(self):
         """Create the main layout structure with header, content area, and footer"""
@@ -155,13 +121,6 @@ class GUI(tk.Tk):
         )
         self.header_subtitle.pack(side="left", padx=(0, 20), pady=15)
         
-        # Exit fullscreen button
-        self.exit_fullscreen_btn = ttk.Button(
-            self.header_frame,
-            text="Exit Fullscreen (ESC)",
-            command=lambda: self.attributes("-fullscreen", False)
-        )
-        self.exit_fullscreen_btn.pack(side="right", padx=20, pady=10)
 
     def build_main_content(self):
         """Build the main content area with three organized sections"""
@@ -187,7 +146,7 @@ class GUI(tk.Tk):
         """Create the analysis tools section (top-right)"""
         self.second_frame = ttk.LabelFrame(
             self.content_frame,
-            text="🔍 Analysis Tools",
+            text="🔍 Analysis Parameter",
             style="Card.TFrame",
             padding=20
         )
@@ -199,7 +158,7 @@ class GUI(tk.Tk):
         """Create the detail filters section (bottom-left)"""
         self.third_frame = ttk.LabelFrame(
             self.content_frame,
-            text="🔧 Detail Filters",
+            text="🔧 Detailed Query Configuration",
             style="Card.TFrame",
             padding=20
         )
