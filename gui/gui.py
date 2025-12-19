@@ -15,7 +15,6 @@ class GUI(tk.Tk):
         
         # Configure window
         self.attributes("-fullscreen", True)
-        self.bind("<Escape>", lambda e: self.attributes("-fullscreen", False))
         
         # Define window size for non-fullscreen mode
         width, height = 1400, 900
@@ -29,6 +28,36 @@ class GUI(tk.Tk):
             self.attributes("-fullscreen", False)
             self.geometry(self._default_geometry)
         self.bind("<Escape>", _exit_fullscreen)
+
+        # Handle window state changes to ensure consistent sizing
+        def _handle_window_state_change():
+            """Monitor window state and ensure consistent sizing"""
+            current_state = self.state()
+            if hasattr(self, '_last_state'):
+                # If we're coming back from minimized state and not in fullscreen
+                if (self._last_state == "iconic" and 
+                    current_state == "normal" and 
+                    not self.attributes("-fullscreen")):
+                    self.geometry(self._default_geometry)
+            self._last_state = current_state
+            # Schedule next check
+            self.after(100, _handle_window_state_change)
+        
+        # Initialize state tracking
+        self._last_state = self.state()
+        
+        # Override iconify to exit fullscreen first
+        original_iconify = self.iconify
+        def _iconify_with_fullscreen_exit():
+            """Exit fullscreen before minimizing"""
+            if self.attributes("-fullscreen"):
+                self.attributes("-fullscreen", False)
+                self.geometry(self._default_geometry)
+            original_iconify()
+        self.iconify = _iconify_with_fullscreen_exit
+        
+        # Start monitoring window state
+        self.after(100, _handle_window_state_change)
 
         # Configure modern styling
         self.setup_styles()
@@ -434,7 +463,10 @@ class GUI(tk.Tk):
         self.eingabe_detail_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
         # Create second entry for "zwischen" option but don't pack it yet
-        self.eingabe_detail_2 = ttk.Entry(input_frame)
+        self.eingabe_detail_2_var = tk.StringVar()
+        self.eingabe_detail_2_var.trace_add("write", self.on_detail_input_change_2)
+        
+        self.eingabe_detail_2 = ttk.Entry(input_frame, textvariable=self.eingabe_detail_2_var)
         self.eingabe_detail_2.bind("<Button-1>", self.on_entry_click)
         self.eingabe_detail_2.bind("<FocusIn>", self.on_entry_focus)
         self.eingabe_detail_2.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
@@ -481,9 +513,80 @@ class GUI(tk.Tk):
         self.clear_results_button.pack(fill="x")
 
     def on_detail_input_change(self, *args):
-        current_text = self.eingabe_detail.get()
-        print("Detail Input Changed:", current_text)
-        self.update_status(f"Filter value updated: {current_text}")
+        """Normalize and validate number input - replace commas with dots and allow only valid number characters"""
+        # Prevent recursive calls
+        if hasattr(self, '_updating_detail_1') and self._updating_detail_1:
+            return
+        
+        self._updating_detail_1 = True
+        try:
+            current_text = self.eingabe_detail.get()
+            cursor_pos = self.eingabe_detail_entry.index(tk.INSERT)
+            
+            # Normalize: replace comma with dot
+            normalized_text = current_text.replace(',', '.')
+            
+            # Validate: only allow digits, dots, minus sign, and spaces
+            valid_chars = set('0123456789.- ')
+            filtered_text = ''.join(c for c in normalized_text if c in valid_chars)
+            
+            # Prevent multiple dots
+            if filtered_text.count('.') > 1:
+                # Keep only the first dot
+                parts = filtered_text.split('.')
+                filtered_text = parts[0] + '.' + ''.join(parts[1:])
+            
+            # Update if changed
+            if filtered_text != current_text:
+                self.eingabe_detail.set(filtered_text)
+                # Restore cursor position
+                try:
+                    self.eingabe_detail_entry.icursor(cursor_pos)
+                except tk.TclError:
+                    pass
+            
+            print("Detail Input Changed:", filtered_text)
+            self.update_status(f"Filter value updated: {filtered_text}")
+        finally:
+            self._updating_detail_1 = False
+
+    def on_detail_input_change_2(self, *args):
+        """Normalize and validate number input for second entry field"""
+        # Prevent recursive calls
+        if hasattr(self, '_updating_detail_2') and self._updating_detail_2:
+            return
+        
+        self._updating_detail_2 = True
+        try:
+            current_text = self.eingabe_detail_2_var.get()
+            cursor_pos = self.eingabe_detail_2.index(tk.INSERT)
+            
+            # Normalize: replace comma with dot
+            normalized_text = current_text.replace(',', '.')
+            
+            # Validate: only allow digits, dots, minus sign, and spaces
+            valid_chars = set('0123456789.- ')
+            filtered_text = ''.join(c for c in normalized_text if c in valid_chars)
+            
+            # Prevent multiple dots
+            if filtered_text.count('.') > 1:
+                # Keep only the first dot
+                parts = filtered_text.split('.')
+                filtered_text = parts[0] + '.' + ''.join(parts[1:])
+            
+            # Update if changed
+            if filtered_text != current_text:
+                self.eingabe_detail_2_var.set(filtered_text)
+                # Restore cursor position
+                try:
+                    self.eingabe_detail_2.icursor(cursor_pos)
+                except tk.TclError:
+                    pass
+            
+            print("Detail Input 2 Changed:", filtered_text)
+            self.update_status(f"Filter value 2 updated: {filtered_text}")
+        finally:
+            self._updating_detail_2 = False
 
     def clear_results(self):
         """Clear the results display"""
@@ -532,80 +635,6 @@ class GUI(tk.Tk):
             pass
         return "break"
     
-    def build_third_frame(self):
-        """Build the detail filters section with enhanced layout"""
-        
-        # Section description
-        description_label = ttk.Label(
-            self.third_frame, 
-            text="Configure detailed result filters:",
-            style="Title.TLabel"
-        )
-        description_label.pack(anchor="w", pady=(0, 15))
-
-        # Filter type selection
-        filter_label = ttk.Label(self.third_frame, text="📊 Filter Metric:", font=("Arial", 10, "bold"))
-        filter_label.pack(anchor="w", pady=(5, 2))
-        
-        self.ms_detail_view = PopoverMultiSelect(
-            self.third_frame,
-            header="Select Detail View Filter",
-            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"],
-            width=35
-        )
-        self.ms_detail_view.pack(fill="x", pady=(0, 10))
-
-        # Comparison type
-        comparison_label = ttk.Label(self.third_frame, text="🔍 Comparison Type:", font=("Arial", 10, "bold"))
-        comparison_label.pack(anchor="w", pady=(5, 2))
-        
-        self.ms_filter_detail = PopoverMultiSelect(
-            self.third_frame,
-            header="Select Comparison Type",
-            items=["größer als", "kleiner als", "gleich", "zwischen"],
-            width=35
-        )
-        self.ms_filter_detail.pack(fill="x", pady=(0, 10))
-        
-        # Bind to selection changes to show/hide second entry
-        self.ms_filter_detail.button.configure(command=self.on_filter_detail_change)
-        
-        # Override the popover's close methods to restore Entry responsiveness
-        self._setup_popover_callbacks()
-
-        # Input values
-        input_label = ttk.Label(self.third_frame, text="🔢 Filter Value(s):", font=("Arial", 10, "bold"))
-        input_label.pack(anchor="w", pady=(5, 2))
-        
-        self.eingabe_detail = tk.StringVar()
-        self.eingabe_detail.trace_add("write", self.on_detail_input_change)
-
-        input_frame = ttk.Frame(self.third_frame)
-        input_frame.pack(fill="x", pady=(0, 10))
-        
-        self.eingabe_detail_entry = ttk.Entry(input_frame, textvariable=self.eingabe_detail)
-        self.eingabe_detail_entry.pack(fill="x")
-        
-        # Bind events to ensure Entry remains responsive
-        self.eingabe_detail_entry.bind("<Button-1>", self.on_entry_click)
-        self.eingabe_detail_entry.bind("<FocusIn>", self.on_entry_focus)
-        self.eingabe_detail_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
-        
-        # Create second entry for "zwischen" option but don't pack it yet
-        self.eingabe_detail_2 = ttk.Entry(input_frame)
-        self.eingabe_detail_2.bind("<Button-1>", self.on_entry_click)
-        self.eingabe_detail_2.bind("<FocusIn>", self.on_entry_focus)
-        self.eingabe_detail_2.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
-        
-        # Add a button to manually restore Entry responsiveness for testing
-        self.restore_button = ttk.Button(
-            self.third_frame,
-            text="🔧 Fix Entry Responsiveness",
-            command=self.force_entry_responsiveness
-        )
-        self.restore_button.pack(fill="x", pady=5)
-        
-        
     # Layout is now handled within build_third_frame method
 
         
@@ -620,7 +649,7 @@ class GUI(tk.Tk):
         selected_filter = self.ms_filter_detail.get_selected()
         if "zwischen" in selected_filter:
             if not self.eingabe_detail_2.winfo_ismapped():
-                self.eingabe_detail_2.pack(pady=10)
+                self.eingabe_detail_2.pack(fill="x", pady=(5, 0))
         else:
             if self.eingabe_detail_2.winfo_ismapped():
                 self.eingabe_detail_2.pack_forget()
