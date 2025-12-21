@@ -126,6 +126,7 @@ class GUI(tk.Tk):
         self.content_frame.grid_columnconfigure(1, weight=1)
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_rowconfigure(1, weight=1)
+        self.content_frame.grid_rowconfigure(2, weight=0)  # Execute button row - no expansion
         
         # Footer section
         self.footer_frame = ttk.Frame(self.main_container, style="Footer.TFrame")
@@ -158,6 +159,7 @@ class GUI(tk.Tk):
         self.create_analysis_tools_section()
         self.create_detail_filters_section()
         self.create_results_section()
+        self.create_execute_button_section()
 
     def create_query_configuration_section(self):
         """Create the query configuration section (top-left)"""
@@ -206,6 +208,25 @@ class GUI(tk.Tk):
         self.results_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
         
         self.build_results_info_section()
+
+    def create_execute_button_section(self):
+        """Create the execute button section (centered, bottom)"""
+        self.execute_frame = ttk.LabelFrame(
+            self.content_frame,
+            text="⚡ Execute",
+            style="Card.TFrame",
+            padding=20
+        )
+        self.execute_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=0, pady=(10, 0))
+        
+        # Create the execute button with larger size
+        self.execute_button = ttk.Button(
+            self.execute_frame,
+            text="🚀 Execute Query",
+            command=self.on_execute,
+            style="Action.TButton"
+        )
+        self.execute_button.pack(expand=True, ipadx=50, ipady=15)
 
     def build_footer(self):
         """Build the application footer"""
@@ -314,15 +335,6 @@ class GUI(tk.Tk):
             width=35
         )
         self.msplus_cost_function.pack(fill="x", pady=(0, 15))
-
-        # Execute button
-        self.execute_button = ttk.Button(
-            self.first_frame, 
-            text="🚀 Execute Query", 
-            command=self.on_execute,
-            style="Action.TButton"
-        )
-        self.execute_button.pack(fill="x", pady=10)
 
     # ----------------- Analysis Parameter Section -----------------------------------------------------------------------------
     
