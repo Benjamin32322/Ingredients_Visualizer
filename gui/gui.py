@@ -324,7 +324,7 @@ class GUI(tk.Tk):
         )
         self.execute_button.pack(fill="x", pady=10)
 
-    # ----------------- Analysis Tools Section -----------------------------------------------------------------------------
+    # ----------------- Analysis Parameter Section -----------------------------------------------------------------------------
     
     def build_second_frame(self):
         """Build the analysis tools section with enhanced layout"""
@@ -341,66 +341,14 @@ class GUI(tk.Tk):
         tools_frame = ttk.Frame(self.second_frame)
         tools_frame.pack(fill="x")
         
-        # Loss Factor Analysis
-        lf_frame = ttk.Frame(tools_frame)
-        lf_frame.pack(fill="x", pady=5)
-        
-        self.loss_factor_button = ttk.Button(
-            lf_frame,
-            text="📉 Loss Factor Analysis",
-            command=self.on_execute,
-            style="Action.TButton"
+        self.ms_analysis_parameter = PopoverMultiSelect(
+            self.second_frame,
+            header="Select Analysis Parameter",
+            items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis"],
+            width=35
         )
-        self.loss_factor_button.pack(fill="x")
-        
-        lf_desc = ttk.Label(
-            lf_frame,
-            text="Analyze loss factors in query execution plans",
-            font=("Arial", 9),
-            foreground="gray"
-        )
-        lf_desc.pack(anchor="w", pady=(2, 0))
 
-        # Q-Error Analysis
-        qe_frame = ttk.Frame(tools_frame)
-        qe_frame.pack(fill="x", pady=15)
-        
-        self.q_error_button = ttk.Button(
-            qe_frame,
-            text="📊 Q-Error Analysis",
-            command=self.execute_q_error,
-            style="Action.TButton"
-        )
-        self.q_error_button.pack(fill="x")
-        
-        qe_desc = ttk.Label(
-            qe_frame,
-            text="Examine cardinality estimation errors (Q-Error)",
-            font=("Arial", 9),
-            foreground="gray"
-        )
-        qe_desc.pack(anchor="w", pady=(2, 0))
-
-        # P-Error Analysis
-        pe_frame = ttk.Frame(tools_frame)
-        pe_frame.pack(fill="x", pady=5)
-        
-        self.p_error_button = ttk.Button(
-            pe_frame,
-            text="📈 P-Error Analysis",
-            command=self.execute_p_error,
-            style="Action.TButton"
-        )
-        self.p_error_button.pack(fill="x")
-        
-        pe_desc = ttk.Label(
-            pe_frame,
-            text="Analyze prediction errors in cost estimation",
-            font=("Arial", 9),
-            foreground="gray"
-        )
-        pe_desc.pack(anchor="w", pady=(2, 0))
-
+        self.ms_analysis_parameter.pack(fill="x", pady=(0, 10))
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
     def build_third_frame(self):
@@ -471,14 +419,8 @@ class GUI(tk.Tk):
         self.eingabe_detail_2.bind("<FocusIn>", self.on_entry_focus)
         self.eingabe_detail_2.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
-        # Add a button to manually restore Entry responsiveness for testing
-        self.restore_button = ttk.Button(
-            self.third_frame,
-            text="🔧 Fix Entry Responsiveness",
-            command=self.force_entry_responsiveness
-        )
-        self.restore_button.pack(fill="x", pady=5)
-
+        
+        
     def build_results_info_section(self):
         """Build the results information section"""
         # Section description
