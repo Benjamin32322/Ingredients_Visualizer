@@ -13,7 +13,7 @@ class QueryHandlersMixin:
     def execute_selected_analysis(self):
         """Execute the analysis based on selected method from MultiSelectPlus"""
         # Get the selected analysis methods
-        selected_methods = self.msplus_analysis_methods.get_selected()
+        selected_methods = self.ms_analysis_parameter.get_selected()
         
         # Check which analysis method is selected
         if "Loss Factor Analysis" in selected_methods:
