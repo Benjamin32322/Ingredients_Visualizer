@@ -17,16 +17,22 @@ class QueryHandlersMixin:
         
         # Check which analysis method is selected
         if "Loss Factor Analysis" in selected_methods:
-            self.on_execute()
+            self.on_execute(query_id=1, analysis_type="Loss Factor")
         elif "Q-Error Analysis" in selected_methods:
-            self.execute_q_error()
+            self.on_execute(query_id=3, analysis_type="Q-Error")
         elif "P-Error Analysis" in selected_methods:
-            self.execute_p_error()
+            self.on_execute(query_id=4, analysis_type="P-Error")
         else:
             self.update_status("Please select an analysis method")
     
-    def on_execute(self):
-        """Execute Loss Factor analysis query"""
+    def on_execute(self, query_id=1, analysis_type="Loss Factor"):
+        """
+        Execute analysis query
+        
+        Args:
+            query_id (int): Query identifier (1 for Loss Factor, 3 for Q-Error, 4 for P-Error)
+            analysis_type (str): Type of analysis for status message
+        """
         selected_pg = self.ms_plan_generator.get_selected()
         selected_cp = self.ms_cardinality_provider.get_selected()
         selected_cf = self.msplus_cost_function.get_selected()
@@ -35,63 +41,25 @@ class QueryHandlersMixin:
         cp_filter = build_filter("cp_name", selected_cp)
         cf_filter = build_cost_filters(selected_cf)
         
-        filters = {
-            "PG_FILTER": pg_filter,
-            "CP_FILTER": cp_filter
-        }
+        # Use different filter names based on query type
+        if query_id == 1:
+            filters = {
+                "PG_FILTER": pg_filter,
+                "CP_FILTER": cp_filter
+            }
+        else:
+            filters = {
+                "PG_NAME_FILTER": pg_filter,
+                "CP_NAME_FILTER": cp_filter
+            }
+        
         filters.update(cf_filter)
-        columns, result = execute_query(1, filters=filters)
+        columns, result = execute_query(query_id, filters=filters)
 
         plot_treeview(columns, result)
         
         # Update status and restore focus
-        self.update_status(f"Loss Factor query executed - {len(result)} results found")
-        self.after(100, self.restore_entry_focus)
-    
-    def execute_q_error(self):
-        """Execute Q-Error analysis query"""
-        selected_pg = self.ms_plan_generator.get_selected()
-        selected_cp = self.ms_cardinality_provider.get_selected()
-        selected_cf = self.msplus_cost_function.get_selected()
-
-        pg_filter = build_filter("pg_name", selected_pg)
-        cp_filter = build_filter("cp_name", selected_cp)
-        cf_filter = build_cost_filters(selected_cf)
-        
-        filters = {
-            "PG_NAME_FILTER": pg_filter,
-            "CP_NAME_FILTER": cp_filter
-        }
-        filters.update(cf_filter)
-        columns, result = execute_query(3, filters=filters)
-
-        plot_treeview(columns, result)
-        
-        # Update status and restore focus
-        self.update_status(f"Q-Error analysis executed - {len(result)} results found")
-        self.after(100, self.restore_entry_focus)
-
-    def execute_p_error(self):
-        """Execute P-Error analysis query"""
-        selected_pg = self.ms_plan_generator.get_selected()
-        selected_cp = self.ms_cardinality_provider.get_selected()
-        selected_cf = self.msplus_cost_function.get_selected()
-
-        pg_filter = build_filter("pg_name", selected_pg)
-        cp_filter = build_filter("cp_name", selected_cp)
-        cf_filter = build_cost_filters(selected_cf)
-        
-        filters = {
-            "PG_NAME_FILTER": pg_filter,
-            "CP_NAME_FILTER": cp_filter
-        }
-        filters.update(cf_filter)
-        columns, result = execute_query(4, filters=filters)
-
-        plot_treeview(columns, result)
-        
-        # Update status and restore focus
-        self.update_status(f"P-Error analysis executed - {len(result)} results found")
+        self.update_status(f"{analysis_type} query executed - {len(result)} results found")
         self.after(100, self.restore_entry_focus)
     
     def get_detail_filter_values(self):
