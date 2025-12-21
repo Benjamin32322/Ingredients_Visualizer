@@ -835,6 +835,53 @@ class GUI(tk.Tk):
             # Handle case where widgets have been destroyed
             pass
     
+    def get_detail_filter_values(self):
+        """
+        Get all detail filter values from the GUI.
+        
+        Returns:
+            dict: Dictionary containing:
+                - 'metrics': List of selected metric(s) (e.g., ['avg_lf', 'median_qerr'])
+                - 'comparison': Selected comparison type (e.g., 'größer als', 'zwischen')
+                - 'value1': First numeric value from entry field (as float or None)
+                - 'value2': Second numeric value from entry field (as float or None, only for 'zwischen')
+        """
+        result = {
+            'metrics': [],
+            'comparison': None,
+            'value1': None,
+            'value2': None
+        }
+        
+        # Get selected metrics
+        if hasattr(self, 'ms_detail_view'):
+            result['metrics'] = self.ms_detail_view.get_selected()
+        
+        # Get comparison type
+        if hasattr(self, 'ms_filter_detail'):
+            comparison_list = self.ms_filter_detail.get_selected()
+            result['comparison'] = comparison_list[0] if comparison_list else None
+        
+        # Get first value
+        if hasattr(self, 'eingabe_detail'):
+            value_str = self.eingabe_detail.get().strip()
+            if value_str:
+                try:
+                    result['value1'] = float(value_str)
+                except ValueError:
+                    result['value1'] = None
+        
+        # Get second value (only relevant for 'zwischen')
+        if hasattr(self, 'eingabe_detail_2_var'):
+            value_str = self.eingabe_detail_2_var.get().strip()
+            if value_str:
+                try:
+                    result['value2'] = float(value_str)
+                except ValueError:
+                    result['value2'] = None
+        
+        return result
+    
 # ------------------------ RUN-METHODE --------------------------------------------------------------
     def run(self):
         self.mainloop()
