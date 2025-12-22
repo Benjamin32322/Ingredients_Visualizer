@@ -108,11 +108,59 @@ class QueryHandlersMixin:
         filters.update(cf_filter)
         columns, result = execute_query(query_id, filters=filters)
 
-        plot_treeview(columns, result)
+        # Build parameter summary for display and export
+        params_summary = self.build_params_summary(
+            query_id=query_id,
+            analysis_type=analysis_type,
+            selected_pg=selected_pg,
+            selected_cp=selected_cp,
+            selected_cf=selected_cf,
+            detail_filter_values=detail_filter_values if query_id == 5 else None
+        )
+        
+        plot_treeview(columns, result, params_summary)
         
         # Update status and restore focus
         self.update_status(f"{analysis_type} query executed - {len(result)} results found")
         self.after(100, self.restore_entry_focus)
+    
+    def build_params_summary(self, query_id, analysis_type, selected_pg, selected_cp, selected_cf, detail_filter_values=None):
+        """
+        Build a summary string of all query parameters for display and export
+        
+        Returns:
+            str: Formatted parameter summary
+        """
+        parts = []
+        parts.append(f"Analysis Type: {analysis_type}")
+        parts.append(f"Plan Generators: {', '.join(selected_pg) if selected_pg else 'All'}")
+        parts.append(f"Cardinality Providers: {', '.join(selected_cp) if selected_cp else 'All'}")
+        
+        # Cost functions
+        cf_parts = []
+        for key, values in selected_cf.items():
+            if values:
+                cf_name = key.replace('_', ' ').title()
+                cf_parts.append(f"{cf_name}: {', '.join(values)}")
+        if cf_parts:
+            parts.append(f"Cost Functions: {' | '.join(cf_parts)}")
+        else:
+            parts.append("Cost Functions: All")
+        
+        # Detail filter (only for query_id=5)
+        if detail_filter_values and query_id == 5:
+            metric = detail_filter_values.get('metrics', [None])[0]
+            comparison = detail_filter_values.get('comparison')
+            value1 = detail_filter_values.get('value1')
+            value2 = detail_filter_values.get('value2')
+            
+            if metric and comparison and value1 is not None:
+                if comparison == "zwischen" and value2 is not None:
+                    parts.append(f"Detail Filter: {metric} {comparison} {value1} und {value2}")
+                else:
+                    parts.append(f"Detail Filter: {metric} {comparison} {value1}")
+        
+        return " | ".join(parts)
     
     def build_detail_metric_filter(self, filter_values):
         """
