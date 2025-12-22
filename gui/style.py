@@ -48,11 +48,11 @@ def setup_application_styles(parent_widget):
     style.configure("Footer.TLabel", 
                    background="#34495e", 
                    foreground="white", 
-                   font=("Arial", 9))
+                   font=("Arial", 16, "bold"))
     
     # Configure button styles
     style.configure("Action.TButton", 
-                   font=("Arial", 10, "bold"))
+                   font=("Arial", 16, "bold"))
     
     return style
 

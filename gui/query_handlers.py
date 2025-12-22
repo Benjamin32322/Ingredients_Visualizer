@@ -80,9 +80,21 @@ class QueryHandlersMixin:
             'value2': None
         }
         
-        # Get selected metrics
-        if hasattr(self, 'ms_detail_view'):
-            result['metrics'] = self.ms_detail_view.get_selected()
+        # Get metrics from the three entry fields
+        metrics = []
+        if hasattr(self, 'metric_entry_1'):
+            metric1 = self.metric_entry_1.get().strip()
+            if metric1:
+                metrics.append(metric1)
+        if hasattr(self, 'metric_entry_2'):
+            metric2 = self.metric_entry_2.get().strip()
+            if metric2:
+                metrics.append(metric2)
+        if hasattr(self, 'metric_entry_3'):
+            metric3 = self.metric_entry_3.get().strip()
+            if metric3:
+                metrics.append(metric3)
+        result['metrics'] = metrics
         
         # Get comparison type
         if hasattr(self, 'ms_filter_detail'):

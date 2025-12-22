@@ -187,18 +187,18 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             self.content_frame,
             text="⚡ Execute",
             style="Card.TFrame",
-            padding=20
+            padding=15
         )
         self.execute_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=0, pady=(10, 0))
         
-        # Create the execute button with larger size
+        # Create the execute button with bigger font (font configured in style.py)
         self.execute_button = ttk.Button(
             self.execute_frame,
             text="🚀 Execute Query",
             command=self.execute_selected_analysis,
             style="Action.TButton"
         )
-        self.execute_button.pack(expand=True, ipadx=50, ipady=15)
+        self.execute_button.pack(expand=True, ipadx=40, ipady=12)
 
     def build_footer(self):
         """Build the application footer"""
@@ -208,7 +208,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             text="Ready - Select your query parameters and analysis tools",
             style="Footer.TLabel"
         )
-        self.status_label.pack(side="left", padx=20, pady=10)
+        self.status_label.pack(side="left", padx=20, pady=15)
         
         # Version and credits
         self.credits_label = ttk.Label(
@@ -216,7 +216,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             text="© 2025 Ingredients Visualizer v1.0 | Advanced Query Interface",
             style="Footer.TLabel"
         )
-        self.credits_label.pack(side="right", padx=20, pady=10)
+        self.credits_label.pack(side="right", padx=20, pady=15)
     
     # ----------------- Query Configuration Section -----------------------------------------------------------------
     
@@ -333,6 +333,14 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
 
         self.ms_analysis_parameter.pack(fill="x", pady=(0, 10))
+        
+        # Bind to selection changes to update metric fields in third frame
+        original_apply = self.ms_analysis_parameter._apply_and_close
+        def enhanced_apply():
+            original_apply()
+            self.after(50, self.update_metric_fields)
+        self.ms_analysis_parameter._apply_and_close = enhanced_apply
+        
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
     def build_third_frame(self):
@@ -346,17 +354,22 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         description_label.pack(anchor="w", pady=(0, 15))
 
-        # Filter type selection
-        filter_label = ttk.Label(self.third_frame, text="📊 Filter Metric:", font=("Arial", 10, "bold"))
-        filter_label.pack(anchor="w", pady=(5, 2))
+        # Metric fields (read-only, auto-populated based on analysis type)
+        metric_label = ttk.Label(self.third_frame, text="📊 Filter Metrics:", font=("Arial", 10, "bold"))
+        metric_label.pack(anchor="w", pady=(5, 2))
         
-        self.ms_detail_view = PopoverMultiSelect(
-            self.third_frame,
-            header="Select Detail View Filter",
-            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"],
-            width=35
-        )
-        self.ms_detail_view.pack(fill="x", pady=(0, 10))
+        # Create three read-only entry fields for metrics
+        metrics_frame = ttk.Frame(self.third_frame)
+        metrics_frame.pack(fill="x", pady=(0, 10))
+        
+        self.metric_entry_1 = ttk.Entry(metrics_frame, state='readonly')
+        self.metric_entry_1.pack(fill="x", pady=2)
+        
+        self.metric_entry_2 = ttk.Entry(metrics_frame, state='readonly')
+        self.metric_entry_2.pack(fill="x", pady=2)
+        
+        self.metric_entry_3 = ttk.Entry(metrics_frame, state='readonly')
+        self.metric_entry_3.pack(fill="x", pady=2)
 
         # Comparison type
         comparison_label = ttk.Label(self.third_frame, text="🔍 Comparison Type:", font=("Arial", 10, "bold"))
@@ -513,6 +526,31 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             self.update_status(f"Filter value 2 updated: {filtered_text}")
         finally:
             self._updating_detail_2 = False
+    
+    def update_metric_fields(self):
+        """Update metric entry fields based on selected analysis type"""
+        selected_analysis = self.ms_analysis_parameter.get_selected()
+        
+        if not selected_analysis:
+            return
+        
+        analysis_type = selected_analysis[0] if selected_analysis else ""
+        
+        # Define metric mappings
+        metrics_map = {
+            "Loss Factor Analysis": ["avg_lf", "median_lf", "max_lf"],
+            "Q-Error Analysis": ["avg_qerr", "median_qerr", "max_qerr"],
+            "P-Error Analysis": ["avg_perr", "median_perr", "max_perr"]
+        }
+        
+        metrics = metrics_map.get(analysis_type, ["", "", ""])
+        
+        # Update entry fields
+        for i, (entry, metric) in enumerate(zip([self.metric_entry_1, self.metric_entry_2, self.metric_entry_3], metrics)):
+            entry.config(state='normal')
+            entry.delete(0, tk.END)
+            entry.insert(0, metric)
+            entry.config(state='readonly')
 
     def clear_results(self):
         """Clear the results display"""
