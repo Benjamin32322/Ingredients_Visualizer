@@ -59,6 +59,8 @@ class QueryHandlersMixin:
                 self.on_execute(query_id=3, analysis_type="Q-Error")
             elif "P-Error Analysis" in selected_methods:
                 self.on_execute(query_id=4, analysis_type="P-Error")
+            elif "Query Analysis" in selected_methods:
+                self.on_execute(query_id=6, analysis_type="Detail Query")
             else:
                 self.update_status("Please select an analysis method")
         print("=" * 60)
@@ -82,14 +84,14 @@ class QueryHandlersMixin:
         # Use different filter names based on query type
         if query_id == 1:
             filters = {
-                "PG_FILTER": pg_filter,
-                "CP_FILTER": cp_filter
+                "PG_NAME_FILTER": pg_filter,
+                "CP_NAME_FILTER": cp_filter
             }
         elif query_id == 5:
             # Detail Query requires DETAIL_METRIC_FILTER
             filters = {
-                "PG_FILTER": pg_filter,
-                "CP_FILTER": cp_filter,
+                "PG_NAME_FILTER": pg_filter,
+                "CP_NAME_FILTER": cp_filter,
                 "BPC_NAME_FILTER": ""  # No BPC filter for DetailQuery
             }
             # Build detail metric filter
