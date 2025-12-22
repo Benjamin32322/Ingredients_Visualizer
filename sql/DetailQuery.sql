@@ -3,9 +3,8 @@
 -- Parameters:
 --   {DETAIL_METRIC_FILTER} - Dynamic HAVING conditions for selected metrics
 --     Examples: 
---       "avg_lf > 10.0"
---       "median_lf BETWEEN 5.0 AND 15.0"
---       "avg_lf > 10.0 AND median_qerr < 20.0"
+--       "AVG(ps_loss_factor) > 10.0"
+--       "MEDIAN(ps_loss_factor) BETWEEN 5.0 AND 15.0"
 --   {BPC_NAME_FILTER}, {CF_*_FILTER}, {PG_FILTER}, {CP_FILTER} - Standard filters from main query
 
 SELECT 
@@ -16,6 +15,9 @@ SELECT
   bpi_cf_mat,
   bpi_cf_concat,
   wp_cf_host_id,
+  ROUND(AVG(ps_loss_factor), 2) AS avg_lf,
+  ROUND(MEDIAN(ps_loss_factor), 2) AS median_lf,
+  ROUND(MAX(ps_loss_factor), 2) AS max_lf,
   COUNT(*) AS cnt
 
 FROM v_ps_base 

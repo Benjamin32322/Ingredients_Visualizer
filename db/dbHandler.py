@@ -89,14 +89,20 @@ def execute_query(file_nr,filters=None):
         case 5:
             try: 
                 sql = open(SQL_PATH_5).read()
-                sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
-                sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
+                sql = sql.replace("{PG_FILTER}",filters.get("PG_FILTER"))
+                sql = sql.replace("{CP_FILTER}", filters.get("CP_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
                 sql = sql.replace("{CF_MAT_FILTER}", filters.get("BPI_CF_MAT_FILTER"))
                 sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
                 sql = sql.replace("{DETAIL_METRIC_FILTER}", filters.get("DETAIL_METRIC_FILTER"))
+                
+                print("\n" + "="*80)
+                print("DEBUG: Final SQL Query (query_id=5):")
+                print("="*80)
+                print(sql)
+                print("="*80 + "\n")
                 
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()

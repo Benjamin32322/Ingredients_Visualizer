@@ -18,25 +18,40 @@ class QueryHandlersMixin:
         """
         # Check if all detail filter fields have values
         detail_filters = self.get_detail_filter_values()
+        print("=" * 60)
+        print("DEBUG: choose_correct_query - detail_filters:")
+        print(f"  metrics: {detail_filters['metrics']}")
+        print(f"  comparison: {detail_filters['comparison']}")
+        print(f"  value1: {detail_filters['value1']}")
+        print(f"  value2: {detail_filters['value2']}")
         
         # Check if all required fields are filled
         has_metrics = bool(detail_filters['metrics'])
         has_comparison = detail_filters['comparison'] is not None
         has_value1 = detail_filters['value1'] is not None
         
+        print(f"  has_metrics: {has_metrics}")
+        print(f"  has_comparison: {has_comparison}")
+        print(f"  has_value1: {has_value1}")
+        
         # For "zwischen", also check if value2 is filled
         if detail_filters['comparison'] == "zwischen":
             has_value2 = detail_filters['value2'] is not None
             all_fields_filled = has_metrics and has_comparison and has_value1 and has_value2
+            print(f"  has_value2: {has_value2}")
         else:
             all_fields_filled = has_metrics and has_comparison and has_value1
         
+        print(f"  all_fields_filled: {all_fields_filled}")
+        
         # If all detail fields are filled, use DetailQuery (query_id=5)
         if all_fields_filled:
+            print("  -> Using DetailQuery (query_id=5)")
             self.on_execute(query_id=5, analysis_type="Detail Query")
         else:
             # Otherwise, execute based on selected analysis method
             selected_methods = self.ms_analysis_parameter.get_selected()
+            print(f"  -> Using selected analysis: {selected_methods}")
             
             if "Loss Factor Analysis" in selected_methods:
                 self.on_execute(query_id=1, analysis_type="Loss Factor")
@@ -46,13 +61,14 @@ class QueryHandlersMixin:
                 self.on_execute(query_id=4, analysis_type="P-Error")
             else:
                 self.update_status("Please select an analysis method")
+        print("=" * 60)
     
     def on_execute(self, query_id=1, analysis_type="Loss Factor"):
         """
         Execute analysis query
         
         Args:
-            query_id (int): Query identifier (1 for Loss Factor, 3 for Q-Error, 4 for P-Error)
+            query_id (int): Query identifier (1 for Loss Factor, 3 for Q-Error, 4 for P-Error, 5 for Detail Query)
             analysis_type (str): Type of analysis for status message
         """
         selected_pg = self.ms_plan_generator.get_selected()
@@ -69,6 +85,20 @@ class QueryHandlersMixin:
                 "PG_FILTER": pg_filter,
                 "CP_FILTER": cp_filter
             }
+        elif query_id == 5:
+            # Detail Query requires DETAIL_METRIC_FILTER
+            filters = {
+                "PG_FILTER": pg_filter,
+                "CP_FILTER": cp_filter,
+                "BPC_NAME_FILTER": ""  # No BPC filter for DetailQuery
+            }
+            # Build detail metric filter
+            detail_filter_values = self.get_detail_filter_values()
+            detail_metric_filter = self.build_detail_metric_filter(detail_filter_values)
+            print("\nDEBUG: on_execute (query_id=5)")
+            print(f"  detail_filter_values: {detail_filter_values}")
+            print(f"  Generated DETAIL_METRIC_FILTER: {detail_metric_filter}")
+            filters["DETAIL_METRIC_FILTER"] = detail_metric_filter
         else:
             filters = {
                 "PG_NAME_FILTER": pg_filter,
@@ -84,61 +114,66 @@ class QueryHandlersMixin:
         self.update_status(f"{analysis_type} query executed - {len(result)} results found")
         self.after(100, self.restore_entry_focus)
     
-    def get_detail_filter_values(self):
+    def build_detail_metric_filter(self, filter_values):
         """
-        Get all detail filter values from the GUI.
+        Convert filter values to SQL HAVING clause condition for DuckDB
+        
+        Args:
+            filter_values (dict): Dictionary from get_detail_filter_values()
+                - 'metrics': List of selected metric(s)
+                - 'comparison': Comparison type
+                - 'value1': First numeric value
+                - 'value2': Second numeric value (only for 'zwischen')
         
         Returns:
-            dict: Dictionary containing:
-                - 'metrics': List of selected metric(s) (e.g., ['avg_lf', 'median_qerr'])
-                - 'comparison': Selected comparison type (e.g., 'größer als', 'zwischen')
-                - 'value1': First numeric value from entry field (as float or None)
-                - 'value2': Second numeric value from entry field (as float or None, only for 'zwischen')
+            str: SQL HAVING clause condition (e.g., "AVG(ps_loss_factor) > 10.0")
         """
-        result = {
-            'metrics': [],
-            'comparison': None,
-            'value1': None,
-            'value2': None
+        metrics = filter_values['metrics']
+        comparison = filter_values['comparison']
+        value1 = filter_values['value1']
+        value2 = filter_values['value2']
+        
+        print(f"\nDEBUG: build_detail_metric_filter")
+        print(f"  Input - metrics: {metrics}")
+        print(f"  Input - comparison: {comparison}")
+        print(f"  Input - value1: {value1}")
+        print(f"  Input - value2: {value2}")
+        
+        # Validate inputs
+        if not metrics or not comparison or value1 is None:
+            print(f"  -> Validation failed, returning '1=1'")
+            return "1=1"  # No filtering
+        
+        # Map metric aliases to actual SQL aggregate functions
+        # Note: Only Loss Factor metrics are available in v_ps_base view
+        metric_to_sql = {
+            "avg_lf": "AVG(ps_loss_factor)",
+            "median_lf": "MEDIAN(ps_loss_factor)",
+            "max_lf": "MAX(ps_loss_factor)"
         }
         
-        # Get metrics from the three entry fields
-        metrics = []
-        if hasattr(self, 'metric_entry_1'):
-            metric1 = self.metric_entry_1.get().strip()
-            if metric1:
-                metrics.append(metric1)
-        if hasattr(self, 'metric_entry_2'):
-            metric2 = self.metric_entry_2.get().strip()
-            if metric2:
-                metrics.append(metric2)
-        if hasattr(self, 'metric_entry_3'):
-            metric3 = self.metric_entry_3.get().strip()
-            if metric3:
-                metrics.append(metric3)
-        result['metrics'] = metrics
+        # Map German comparison types to SQL operators
+        comparison_map = {
+            "größer als": ">",
+            "kleiner als": "<",
+            "gleich": "="
+        }
         
-        # Get comparison type
-        if hasattr(self, 'ms_filter_detail'):
-            comparison_list = self.ms_filter_detail.get_selected()
-            result['comparison'] = comparison_list[0] if comparison_list else None
+        # Use only the first metric for the filter
+        metric = metrics[0]
+        sql_metric = metric_to_sql.get(metric, metric)
+        print(f"  Using metric: {metric} -> SQL: {sql_metric}")
         
-        # Get first value
-        if hasattr(self, 'eingabe_detail'):
-            value_str = self.eingabe_detail.get().strip()
-            if value_str:
-                try:
-                    result['value1'] = float(value_str)
-                except ValueError:
-                    result['value1'] = None
-        
-        # Get second value (only relevant for 'zwischen')
-        if hasattr(self, 'eingabe_detail_2_var'):
-            value_str = self.eingabe_detail_2_var.get().strip()
-            if value_str:
-                try:
-                    result['value2'] = float(value_str)
-                except ValueError:
-                    result['value2'] = None
-        
-        return result
+        if comparison == "zwischen":
+            if value2 is not None:
+                result = f"{sql_metric} BETWEEN {value1} AND {value2}"
+                print(f"  -> Generated (zwischen): {result}")
+                return result
+            else:
+                print(f"  -> 'zwischen' selected but value2 is None, returning '1=1'")
+                return "1=1"  # Invalid 'zwischen' without value2
+        else:
+            operator = comparison_map.get(comparison, ">")
+            result = f"{sql_metric} {operator} {value1}"
+            print(f"  -> Generated ({comparison} -> {operator}): {result}")
+            return result

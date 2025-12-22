@@ -672,9 +672,23 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             'value2': None
         }
         
-        # Get selected metrics
-        if hasattr(self, 'ms_detail_view'):
-            result['metrics'] = self.ms_detail_view.get_selected()
+        # Get metrics - derive from selected analysis type
+        # This is more stable since it uses the same source as update_metric_fields()
+        if hasattr(self, 'ms_analysis_parameter'):
+            selected_analysis = self.ms_analysis_parameter.get_selected()
+            
+            if selected_analysis:
+                analysis_type = selected_analysis[0]
+                # Define metric mappings (same as in update_metric_fields)
+                metrics_map = {
+                    "Loss Factor Analysis": ["avg_lf", "median_lf", "max_lf"],
+                    "Q-Error Analysis": ["avg_qerr", "median_qerr", "max_qerr"],
+                    "P-Error Analysis": ["avg_perr", "median_perr", "max_perr"]
+                }
+                metrics = metrics_map.get(analysis_type, [])
+                # Use only the first metric for the detail filter
+                if metrics:
+                    result['metrics'] = [metrics[0]]
         
         # Get comparison type
         if hasattr(self, 'ms_filter_detail'):
