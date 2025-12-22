@@ -261,7 +261,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         self.ms_build_plan_class = PopoverMultiSelect(
             self.first_frame,
-            header="bpc_name",
+            header="Select Build Plan Class",
             items=get_values_for_dropdown("build_plan_class", "bpc_name"),
             width=35
         )

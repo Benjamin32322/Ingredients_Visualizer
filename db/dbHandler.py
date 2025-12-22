@@ -1,5 +1,5 @@
 # dbHandler.py
-from config import DB_PATH, SQL_PATH_1, SQL_PATH_2, SQL_PATH_3, SQL_PATH_4, SQL_PATH_5, SQL_PATH_6
+from config import DB_PATH, SQL_PATH_LOSS_FACTOR, SQL_PATH_Q_ERROR, SQL_PATH_P_ERROR, SQL_PATH_PLAENE, SQL_PATH_DETAILED_QUERY, SQL_PATH_QUERY_ANALYSIS
 
 import duckdb
 
@@ -19,7 +19,7 @@ def execute_query(file_nr,filters=None):
     match file_nr:
         case 1:
             try:
-                sql = open(SQL_PATH_1).read()
+                sql = open(SQL_PATH_LOSS_FACTOR).read()
                 sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
                 sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
@@ -36,7 +36,7 @@ def execute_query(file_nr,filters=None):
                 raise ex
         case 2:
             try:
-                sql = open(SQL_PATH_2).read()
+                sql = open(SQL_PATH_PLAENE).read()
                 sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
                 sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
@@ -53,7 +53,7 @@ def execute_query(file_nr,filters=None):
                 raise ex
         case 3:
             try:
-                sql = open(SQL_PATH_3).read()
+                sql = open(SQL_PATH_Q_ERROR).read()
                 sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
                 sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
@@ -72,7 +72,7 @@ def execute_query(file_nr,filters=None):
         
         case 4:
             try: 
-                sql = open(SQL_PATH_4).read()
+                sql = open(SQL_PATH_P_ERROR).read()
                 sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
                 sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
@@ -90,7 +90,7 @@ def execute_query(file_nr,filters=None):
         
         case 5:
             try: 
-                sql = open(SQL_PATH_5).read()
+                sql = open(SQL_PATH_DETAILED_QUERY).read()
                 sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
                 sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
@@ -114,7 +114,7 @@ def execute_query(file_nr,filters=None):
                 raise ex
         case 6:
             try:
-                sql = open(SQL_PATH_6).read()
+                sql = open(SQL_PATH_QUERY_ANALYSIS).read()
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
 
