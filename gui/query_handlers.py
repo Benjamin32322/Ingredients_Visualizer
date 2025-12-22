@@ -20,32 +20,26 @@ class QueryHandlersMixin:
         detail_filters = self.get_detail_filter_values()
         print("=" * 60)
         print("DEBUG: choose_correct_query - detail_filters:")
-        print(f"  metrics: {detail_filters['metrics']}")
-        print(f"  comparison: {detail_filters['comparison']}")
-        print(f"  value1: {detail_filters['value1']}")
-        print(f"  value2: {detail_filters['value2']}")
+        print(f"  Number of filter rows: {len(detail_filters)}")
         
-        # Check if all required fields are filled
-        has_metrics = bool(detail_filters['metrics'])
-        has_comparison = detail_filters['comparison'] is not None
-        has_value1 = detail_filters['value1'] is not None
+        # Check if at least one complete filter exists
+        has_complete_filter = False
+        for i, filter_row in enumerate(detail_filters):
+            print(f"  Filter {i+1}:")
+            print(f"    metric: {filter_row.get('metric')}")
+            print(f"    comparison: {filter_row.get('comparison')}")
+            print(f"    value: {filter_row.get('value')}")
+            
+            # A filter is complete if it has metric, comparison, and value
+            if (filter_row.get('metric') and 
+                filter_row.get('comparison') and 
+                filter_row.get('value') is not None):
+                has_complete_filter = True
         
-        print(f"  has_metrics: {has_metrics}")
-        print(f"  has_comparison: {has_comparison}")
-        print(f"  has_value1: {has_value1}")
+        print(f"  has_complete_filter: {has_complete_filter}")
         
-        # For "zwischen", also check if value2 is filled
-        if detail_filters['comparison'] == "zwischen":
-            has_value2 = detail_filters['value2'] is not None
-            all_fields_filled = has_metrics and has_comparison and has_value1 and has_value2
-            print(f"  has_value2: {has_value2}")
-        else:
-            all_fields_filled = has_metrics and has_comparison and has_value1
-        
-        print(f"  all_fields_filled: {all_fields_filled}")
-        
-        # If all detail fields are filled, use DetailQuery (query_id=5)
-        if all_fields_filled:
+        # If at least one complete filter exists, use DetailQuery (query_id=5)
+        if has_complete_filter:
             print("  -> Using DetailQuery (query_id=5)")
             self.on_execute(query_id=5, analysis_type="Detail Query")
         else:
@@ -149,18 +143,19 @@ class QueryHandlersMixin:
         else:
             parts.append("Cost Functions: All")
         
-        # Detail filter (only for query_id=5)
-        if detail_filter_values and query_id == 5:
-            metric = detail_filter_values.get('metrics', [None])[0]
-            comparison = detail_filter_values.get('comparison')
-            value1 = detail_filter_values.get('value1')
-            value2 = detail_filter_values.get('value2')
+        # Detail filters (only for query_id=5)
+        if detail_filter_values and query_id == 5 and isinstance(detail_filter_values, list):
+            filter_parts = []
+            for filter_dict in detail_filter_values:
+                metric = filter_dict.get('metric')
+                comparison = filter_dict.get('comparison')
+                value = filter_dict.get('value')
+                
+                if metric and comparison and value is not None:
+                    filter_parts.append(f"{metric} {comparison} {value}")
             
-            if metric and comparison and value1 is not None:
-                if comparison == "zwischen" and value2 is not None:
-                    parts.append(f"Detail Filter: {metric} {comparison} {value1} und {value2}")
-                else:
-                    parts.append(f"Detail Filter: {metric} {comparison} {value1}")
+            if filter_parts:
+                parts.append(f"Detail Filters: {', '.join(filter_parts)}")
         
         return " | ".join(parts)
     
@@ -169,29 +164,22 @@ class QueryHandlersMixin:
         Convert filter values to SQL HAVING clause condition for DuckDB
         
         Args:
-            filter_values (dict): Dictionary from get_detail_filter_values()
-                - 'metrics': List of selected metric(s)
+            filter_values (list): List of filter dictionaries from get_detail_filter_values()
+                Each dict contains:
+                - 'metric': Selected metric (e.g., 'avg_lf')
                 - 'comparison': Comparison type
-                - 'value1': First numeric value
-                - 'value2': Second numeric value (only for 'zwischen')
+                - 'value': Numeric value
         
         Returns:
-            str: SQL HAVING clause condition (e.g., "AVG(ps_loss_factor) > 10.0")
+            str: SQL HAVING clause condition with multiple filters combined with AND
+                 (e.g., "AVG(ps_loss_factor) > 10.0 AND MEDIAN(ps_loss_factor) < 50.0")
         """
-        metrics = filter_values['metrics']
-        comparison = filter_values['comparison']
-        value1 = filter_values['value1']
-        value2 = filter_values['value2']
-        
         print(f"\nDEBUG: build_detail_metric_filter")
-        print(f"  Input - metrics: {metrics}")
-        print(f"  Input - comparison: {comparison}")
-        print(f"  Input - value1: {value1}")
-        print(f"  Input - value2: {value2}")
+        print(f"  Input - filter_values: {filter_values}")
         
         # Validate inputs
-        if not metrics or not comparison or value1 is None:
-            print(f"  -> Validation failed, returning '1=1'")
+        if not filter_values:
+            print(f"  -> No filters provided, returning '1=1'")
             return "1=1"  # No filtering
         
         # Map metric aliases to actual SQL aggregate functions
@@ -199,7 +187,13 @@ class QueryHandlersMixin:
         metric_to_sql = {
             "avg_lf": "AVG(ps_loss_factor)",
             "median_lf": "MEDIAN(ps_loss_factor)",
-            "max_lf": "MAX(ps_loss_factor)"
+            "max_lf": "MAX(ps_loss_factor)",
+            "avg_qerr": "AVG(ps_qerr)",
+            "median_qerr": "MEDIAN(ps_qerr)",
+            "max_qerr": "MAX(ps_qerr)",
+            "avg_perr": "AVG(ps_perr)",
+            "median_perr": "MEDIAN(ps_perr)",
+            "max_perr": "MAX(ps_perr)"
         }
         
         # Map German comparison types to SQL operators
@@ -209,21 +203,29 @@ class QueryHandlersMixin:
             "gleich": "="
         }
         
-        # Use only the first metric for the filter
-        metric = metrics[0]
-        sql_metric = metric_to_sql.get(metric, metric)
-        print(f"  Using metric: {metric} -> SQL: {sql_metric}")
-        
-        if comparison == "zwischen":
-            if value2 is not None:
-                result = f"{sql_metric} BETWEEN {value1} AND {value2}"
-                print(f"  -> Generated (zwischen): {result}")
-                return result
-            else:
-                print(f"  -> 'zwischen' selected but value2 is None, returning '1=1'")
-                return "1=1"  # Invalid 'zwischen' without value2
-        else:
+        # Build SQL conditions for each filter
+        conditions = []
+        for i, filter_dict in enumerate(filter_values):
+            metric = filter_dict.get('metric')
+            comparison = filter_dict.get('comparison')
+            value = filter_dict.get('value')
+            
+            # Skip incomplete filters
+            if not metric or not comparison or value is None:
+                print(f"  Filter {i+1}: Incomplete, skipping")
+                continue
+            
+            sql_metric = metric_to_sql.get(metric, metric)
             operator = comparison_map.get(comparison, ">")
-            result = f"{sql_metric} {operator} {value1}"
-            print(f"  -> Generated ({comparison} -> {operator}): {result}")
+            condition = f"{sql_metric} {operator} {value}"
+            conditions.append(condition)
+            print(f"  Filter {i+1}: {metric} {comparison} {value} -> {condition}")
+        
+        # Combine all conditions with AND
+        if conditions:
+            result = " AND ".join(conditions)
+            print(f"  -> Final SQL: {result}")
             return result
+        else:
+            print(f"  -> No valid conditions, returning '1=1'")
+            return "1=1"

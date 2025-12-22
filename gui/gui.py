@@ -328,7 +328,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_analysis_parameter = PopoverMultiSelect(
             self.second_frame,
             header="Select Analysis Parameter",
-            items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis", "Query Analysis"],
+            items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis", "Query Analysis", "Detail Query Analysis"],
             width=35
         )
 
@@ -344,7 +344,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
     def build_third_frame(self):
-        """Build the detail filters section with enhanced layout"""
+        """Build the detail filters section with dynamic filter rows"""
         
         # Section description
         description_label = ttk.Label(
@@ -354,67 +354,100 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         description_label.pack(anchor="w", pady=(0, 15))
 
-        # Metric fields (read-only, auto-populated based on analysis type)
-        metric_label = ttk.Label(self.third_frame, text="📊 Filter Metrics:", font=("Arial", 10, "bold"))
-        metric_label.pack(anchor="w", pady=(5, 2))
+        # Container for all filter rows
+        self.filter_rows_container = ttk.Frame(self.third_frame)
+        self.filter_rows_container.pack(fill="x", pady=(0, 10))
         
-        # Create three read-only entry fields for metrics
-        metrics_frame = ttk.Frame(self.third_frame)
-        metrics_frame.pack(fill="x", pady=(0, 10))
+        # List to store filter row widgets (initialize only once)
+        if not hasattr(self, 'filter_rows'):
+            self.filter_rows = []
+            
+            # Add the first filter row
+            self.add_filter_row()
         
-        self.metric_entry_1 = ttk.Entry(metrics_frame, state='readonly')
-        self.metric_entry_1.pack(fill="x", pady=2)
+        # Add button container (centered)
+        button_container = ttk.Frame(self.third_frame)
+        button_container.pack(fill="x", pady=(5, 10))
         
-        self.metric_entry_2 = ttk.Entry(metrics_frame, state='readonly')
-        self.metric_entry_2.pack(fill="x", pady=2)
-        
-        self.metric_entry_3 = ttk.Entry(metrics_frame, state='readonly')
-        self.metric_entry_3.pack(fill="x", pady=2)
-
-        # Comparison type
-        comparison_label = ttk.Label(self.third_frame, text="🔍 Comparison Type:", font=("Arial", 10, "bold"))
-        comparison_label.pack(anchor="w", pady=(5, 2))
-        
-        self.ms_filter_detail = PopoverMultiSelect(
-            self.third_frame,
-            header="Select Comparison Type",
-            items=["größer als", "kleiner als", "gleich", "zwischen"],
-            width=35
+        # "+" button to add new filter rows
+        add_button = ttk.Button(
+            button_container,
+            text="+ Add Filter",
+            command=self.add_filter_row,
+            width=15
         )
-        self.ms_filter_detail.pack(fill="x", pady=(0, 10))
+        add_button.pack(anchor="center")
         
-        # Bind to selection changes to show/hide second entry
-        self.ms_filter_detail.button.configure(command=self.on_filter_detail_change)
+    def add_filter_row(self):
+        """Add a new filter row with metric, comparison, and value widgets"""
+        from gui.multiSelect import PopoverMultiSelect
         
-        # Override the popover's close methods to restore Entry responsiveness
-        self._setup_popover_callbacks()
-
-        # Input values
-        input_label = ttk.Label(self.third_frame, text="🔢 Filter Value(s):", font=("Arial", 10, "bold"))
-        input_label.pack(anchor="w", pady=(5, 2))
+        # Create a frame for this filter row
+        row_frame = ttk.Frame(self.filter_rows_container)
+        row_frame.pack(fill="x", pady=5)
         
-        self.eingabe_detail = tk.StringVar()
-        self.eingabe_detail.trace_add("write", self.on_detail_input_change)
-
-        input_frame = ttk.Frame(self.third_frame)
-        input_frame.pack(fill="x", pady=(0, 10))
+        # Create a dictionary to store widgets for this row
+        row_widgets = {}
         
-        self.eingabe_detail_entry = ttk.Entry(input_frame, textvariable=self.eingabe_detail)
-        self.eingabe_detail_entry.pack(fill="x")
+        # Column 1: Filter Metrics (PopoverMultiSelect)
+        metric_frame = ttk.Frame(row_frame)
+        metric_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        
+        metric_label = ttk.Label(metric_frame, text="Filter Metric:", font=("Arial", 9))
+        metric_label.pack(anchor="w")
+        
+        # Dummy values for metrics - will be updated based on analysis type
+        dummy_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"]
+        metric_select = PopoverMultiSelect(
+            metric_frame,
+            header="Select Metric",
+            items=dummy_metrics,
+            width=20,
+            height=6
+        )
+        metric_select.pack(fill="x")
+        row_widgets['metric_select'] = metric_select
+        
+        # Column 2: Comparison Type (PopoverMultiSelect)
+        comparison_frame = ttk.Frame(row_frame)
+        comparison_frame.pack(side="left", fill="both", expand=True, padx=5)
+        
+        comparison_label = ttk.Label(comparison_frame, text="Comparison:", font=("Arial", 9))
+        comparison_label.pack(anchor="w")
+        
+        comparison_select = PopoverMultiSelect(
+            comparison_frame,
+            header="Select Comparison",
+            items=["größer als", "kleiner als", "gleich", "zwischen"],
+            width=20,
+            height=4
+        )
+        comparison_select.pack(fill="x")
+        row_widgets['comparison_select'] = comparison_select
+        
+        # Column 3: Filter Value (Entry)
+        value_frame = ttk.Frame(row_frame)
+        value_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
+        
+        value_label = ttk.Label(value_frame, text="Value:", font=("Arial", 9))
+        value_label.pack(anchor="w")
+        
+        value_var = tk.StringVar()
+        value_entry = ttk.Entry(value_frame, textvariable=value_var)
+        value_entry.pack(fill="x")
+        row_widgets['value_var'] = value_var
+        row_widgets['value_entry'] = value_entry
         
         # Bind events to ensure Entry remains responsive
-        self.eingabe_detail_entry.bind("<Button-1>", self.on_entry_click)
-        self.eingabe_detail_entry.bind("<FocusIn>", self.on_entry_focus)
-        self.eingabe_detail_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
+        value_entry.bind("<Button-1>", self.on_entry_click)
+        value_entry.bind("<FocusIn>", self.on_entry_focus)
+        value_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
-        # Create second entry for "zwischen" option but don't pack it yet
-        self.eingabe_detail_2_var = tk.StringVar()
-        self.eingabe_detail_2_var.trace_add("write", self.on_detail_input_change_2)
+        # Store the row frame and widgets
+        row_widgets['frame'] = row_frame
+        self.filter_rows.append(row_widgets)
         
-        self.eingabe_detail_2 = ttk.Entry(input_frame, textvariable=self.eingabe_detail_2_var)
-        self.eingabe_detail_2.bind("<Button-1>", self.on_entry_click)
-        self.eingabe_detail_2.bind("<FocusIn>", self.on_entry_focus)
-        self.eingabe_detail_2.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
+        print(f"Added filter row #{len(self.filter_rows)}")
         
         
         
@@ -528,7 +561,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             self._updating_detail_2 = False
     
     def update_metric_fields(self):
-        """Update metric entry fields based on selected analysis type"""
+        """Update available metrics in filter rows based on selected analysis type"""
         selected_analysis = self.ms_analysis_parameter.get_selected()
         
         if not selected_analysis:
@@ -543,14 +576,15 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             "P-Error Analysis": ["avg_perr", "median_perr", "max_perr"]
         }
         
-        metrics = metrics_map.get(analysis_type, ["", "", ""])
+        metrics = metrics_map.get(analysis_type, [])
         
-        # Update entry fields
-        for i, (entry, metric) in enumerate(zip([self.metric_entry_1, self.metric_entry_2, self.metric_entry_3], metrics)):
-            entry.config(state='normal')
-            entry.delete(0, tk.END)
-            entry.insert(0, metric)
-            entry.config(state='readonly')
+        # Update available metrics in all filter rows
+        if hasattr(self, 'filter_rows') and metrics:
+            for row in self.filter_rows:
+                metric_select = row.get('metric_select')
+                if metric_select:
+                    # Update the available items in the metric selector
+                    metric_select.set_items(metrics)
 
     def clear_results(self):
         """Clear the results display"""
@@ -637,18 +671,13 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     def restore_entry_focus(self):
         """Restore focus capabilities to Entry widgets after other operations"""
         try:
-            # Ensure Entry widgets are properly enabled and can receive focus
-            if hasattr(self, 'eingabe_detail_entry') and self.eingabe_detail_entry.winfo_exists():
-                self.eingabe_detail_entry.config(state='normal')
-                # Force focus update
-                self.eingabe_detail_entry.update_idletasks()
-                
-            if hasattr(self, 'eingabe_detail_2') and self.eingabe_detail_2.winfo_exists():
-                self.eingabe_detail_2.config(state='normal')
-                self.eingabe_detail_2.update_idletasks()
-                
-            # Update entries visibility based on current selection
-            self.update_detail_entries_visibility()
+            # Ensure all filter row Entry widgets are properly enabled and can receive focus
+            if hasattr(self, 'filter_rows'):
+                for row in self.filter_rows:
+                    value_entry = row.get('value_entry')
+                    if value_entry and value_entry.winfo_exists():
+                        value_entry.config(state='normal')
+                        value_entry.update_idletasks()
             
         except tk.TclError:
             # Handle case where widgets have been destroyed
@@ -656,64 +685,55 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     
     def get_detail_filter_values(self):
         """
-        Get all detail filter values from the GUI.
+        Get all detail filter values from all filter rows.
         
         Returns:
-            dict: Dictionary containing:
-                - 'metrics': List of selected metric(s) (e.g., ['avg_lf', 'median_qerr'])
+            list: List of filter dictionaries, each containing:
+                - 'metric': Selected metric (e.g., 'avg_lf')
                 - 'comparison': Selected comparison type (e.g., 'größer als', 'zwischen')
-                - 'value1': First numeric value from entry field (as float or None)
-                - 'value2': Second numeric value from entry field (as float or None, only for 'zwischen')
+                - 'value': Numeric value from entry field (as float or None)
         """
-        result = {
-            'metrics': [],
-            'comparison': None,
-            'value1': None,
-            'value2': None
-        }
+        filters = []
         
-        # Get metrics - derive from selected analysis type
-        # This is more stable since it uses the same source as update_metric_fields()
-        if hasattr(self, 'ms_analysis_parameter'):
-            selected_analysis = self.ms_analysis_parameter.get_selected()
-            
-            if selected_analysis:
-                analysis_type = selected_analysis[0]
-                # Define metric mappings (same as in update_metric_fields)
-                metrics_map = {
-                    "Loss Factor Analysis": ["avg_lf", "median_lf", "max_lf"],
-                    "Q-Error Analysis": ["avg_qerr", "median_qerr", "max_qerr"],
-                    "P-Error Analysis": ["avg_perr", "median_perr", "max_perr"]
+        # Iterate through all filter rows
+        if hasattr(self, 'filter_rows'):
+            for i, row in enumerate(self.filter_rows):
+                filter_dict = {
+                    'metric': None,
+                    'comparison': None,
+                    'value': None
                 }
-                metrics = metrics_map.get(analysis_type, [])
-                # Use only the first metric for the detail filter
-                if metrics:
-                    result['metrics'] = [metrics[0]]
+                
+                # Get metric selection
+                metric_select = row.get('metric_select')
+                if metric_select:
+                    selected_metrics = metric_select.get_selected()
+                    if selected_metrics:
+                        filter_dict['metric'] = selected_metrics[0]  # Take first selected metric
+                
+                # Get comparison selection
+                comparison_select = row.get('comparison_select')
+                if comparison_select:
+                    selected_comparisons = comparison_select.get_selected()
+                    if selected_comparisons:
+                        filter_dict['comparison'] = selected_comparisons[0]
+                
+                # Get value
+                value_var = row.get('value_var')
+                if value_var:
+                    value_str = value_var.get().strip()
+                    if value_str:
+                        try:
+                            filter_dict['value'] = float(value_str)
+                        except ValueError:
+                            filter_dict['value'] = None
+                
+                # Only add filter if it has at least a metric selected
+                if filter_dict['metric']:
+                    filters.append(filter_dict)
+                    print(f"Filter row {i+1}: {filter_dict}")
         
-        # Get comparison type
-        if hasattr(self, 'ms_filter_detail'):
-            comparison_list = self.ms_filter_detail.get_selected()
-            result['comparison'] = comparison_list[0] if comparison_list else None
-        
-        # Get first value
-        if hasattr(self, 'eingabe_detail'):
-            value_str = self.eingabe_detail.get().strip()
-            if value_str:
-                try:
-                    result['value1'] = float(value_str)
-                except ValueError:
-                    result['value1'] = None
-        
-        # Get second value (only relevant for 'zwischen')
-        if hasattr(self, 'eingabe_detail_2_var'):
-            value_str = self.eingabe_detail_2_var.get().strip()
-            if value_str:
-                try:
-                    result['value2'] = float(value_str)
-                except ValueError:
-                    result['value2'] = None
-        
-        return result
+        return filters
     
 # ------------------------ RUN-METHODE --------------------------------------------------------------
     def run(self):
