@@ -1,6 +1,13 @@
 -- CostFunction.sql
 
-SELECT ps_qerr_cost_pg, ps_qerr_opt_cost_pg,
+SELECT 
+  pg_name,
+  cp_name,
+  bpc_name,
+  bpi_cf_join_bundle,
+  bpi_cf_mat,
+  bpi_cf_concat,
+  wp_cf_host_id,
 
   ROUND(AVG(ps_qerr_cost_pg), 4) AS avg_qerr,
   ROUND(MEDIAN(ps_qerr_cost_pg), 4) AS median_qerr,
@@ -24,5 +31,5 @@ WHERE 1=1
   {PG_NAME_FILTER}
   {CP_NAME_FILTER}
 
-GROUP BY ps_qerr_cost_pg, ps_qerr_opt_cost_pg
-ORDER BY ps_qerr_cost_pg DESC;
+GROUP BY pg_name, cp_name, bpc_name, bpi_cf_join_bundle, bpi_cf_mat, bpi_cf_concat, wp_cf_host_id
+ORDER BY pg_name ASC, cp_name ASC;

@@ -117,8 +117,9 @@ def plot_treeview(columns, data, params_summary=""):
         
         
         columns2, result2 = execute_query(2, filters=filters)
-    
-        plot_treeview(columns2, result2)
+        
+        # Pass the same params_summary to the detail view
+        plot_treeview(columns2, result2, params_summary)
 
 
     tree.bind("<Double-1>", open_detail_view)
