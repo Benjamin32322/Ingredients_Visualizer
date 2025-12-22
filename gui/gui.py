@@ -255,6 +255,18 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_cardinality_provider.pack(fill="x", pady=(0, 10))
 
+        # Build Plan Class section
+        bpc_label = ttk.Label(self.first_frame, text="🏗️ Build Plan Class:", font=("Arial", 10, "bold"))
+        bpc_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_build_plan_class = PopoverMultiSelect(
+            self.first_frame,
+            header="bpc_name",
+            items=get_values_for_dropdown("build_plan_class", "bpc_name"),
+            width=35
+        )
+        self.ms_build_plan_class.pack(fill="x", pady=(0, 10))
+
         # Cost Function section
         cf_label = ttk.Label(self.first_frame, text="💰 Cost Function Parameters:", font=("Arial", 10, "bold"))
         cf_label.pack(anchor="w", pady=(5, 2))
@@ -280,13 +292,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             width=35
         )
         
-        self.ms_cf_bpc = PopoverMultiSelect(
-            self.first_frame,
-            header="bpc_name",
-            items=get_values_for_dropdown("build_plan_class", "bpc_name"),
-            width=35
-        )
-        
         self.ms_cf_host_id = PopoverMultiSelect(
             self.first_frame,
             header="wp_cf_host_id",
@@ -301,7 +306,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                 self.ms_cf_mat,
                 self.ms_cf_concat,
                 self.ms_cf_join_bundle,
-                self.ms_cf_bpc,
                 self.ms_cf_host_id
             ],
             width=35
@@ -369,14 +373,27 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         button_container = ttk.Frame(self.third_frame)
         button_container.pack(fill="x", pady=(5, 10))
         
+        # Create a sub-container to center both buttons
+        buttons_frame = ttk.Frame(button_container)
+        buttons_frame.pack(anchor="center")
+        
         # "+" button to add new filter rows
         add_button = ttk.Button(
-            button_container,
+            buttons_frame,
             text="+ Add Filter",
             command=self.add_filter_row,
             width=15
         )
-        add_button.pack(anchor="center")
+        add_button.pack(side="left", padx=5)
+        
+        # "-" button to remove last filter row
+        delete_button = ttk.Button(
+            buttons_frame,
+            text="− Remove Last",
+            command=self.remove_last_filter_row,
+            width=15
+        )
+        delete_button.pack(side="left", padx=5)
         
     def add_filter_row(self):
         """Add a new filter row with metric, comparison, and value widgets"""
@@ -448,6 +465,24 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.filter_rows.append(row_widgets)
         
         print(f"Added filter row #{len(self.filter_rows)}")
+        
+    def remove_last_filter_row(self):
+        """Remove the last filter row (but keep at least one row)"""
+        if len(self.filter_rows) <= 1:
+            self.update_status("Cannot remove the last filter row")
+            print("Cannot remove the last filter row - at least one row must remain")
+            return
+        
+        # Get the last row
+        last_row = self.filter_rows.pop()
+        
+        # Destroy the frame and all its widgets
+        frame = last_row.get('frame')
+        if frame:
+            frame.destroy()
+        
+        print(f"Removed filter row. Remaining rows: {len(self.filter_rows)}")
+        self.update_status(f"Filter row removed - {len(self.filter_rows)} row(s) remaining")
         
         
         
