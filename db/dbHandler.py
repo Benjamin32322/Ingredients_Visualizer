@@ -1,5 +1,5 @@
 # dbHandler.py
-from config import DB_PATH, SQL_PATH_1, SQL_PATH_2, SQL_PATH_3, SQL_PATH_4
+from config import DB_PATH, SQL_PATH_1, SQL_PATH_2, SQL_PATH_3, SQL_PATH_4, SQL_PATH_5
 
 import duckdb
 
@@ -79,6 +79,25 @@ def execute_query(file_nr,filters=None):
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
 
+                columns = [desc[0] for desc in connect_to_db().execute(sql).description]
+                result = connect_to_db().execute(sql).fetchall()
+
+                return columns, result
+            except Exception as ex:
+                raise ex
+        
+        case 5:
+            try: 
+                sql = open(SQL_PATH_5).read()
+                sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
+                sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
+                sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
+                sql = sql.replace("{CF_MAT_FILTER}", filters.get("BPI_CF_MAT_FILTER"))
+                sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
+                sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
+                sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+                sql = sql.replace("{DETAIL_METRIC_FILTER}", filters.get("DETAIL_METRIC_FILTER"))
+                
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
 

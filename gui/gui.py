@@ -195,7 +195,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.execute_button = ttk.Button(
             self.execute_frame,
             text="🚀 Execute Query",
-            command=self.execute_selected_analysis,
+            command=self.choose_correct_query,
             style="Action.TButton"
         )
         self.execute_button.pack(expand=True, ipadx=40, ipady=12)

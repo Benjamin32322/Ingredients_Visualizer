@@ -10,20 +10,42 @@ from plotting.plotting import plot_treeview
 class QueryHandlersMixin:
     """Mixin class providing database query execution methods"""
     
-    def execute_selected_analysis(self):
-        """Execute the analysis based on selected method from MultiSelectPlus"""
-        # Get the selected analysis methods
-        selected_methods = self.ms_analysis_parameter.get_selected()
+    def choose_correct_query(self):
+        """
+        Determine the correct query based on GUI inputs.
+        If all detail filter fields have values, use query_id=5 (DetailQuery).
+        Otherwise, route to the selected analysis method.
+        """
+        # Check if all detail filter fields have values
+        detail_filters = self.get_detail_filter_values()
         
-        # Check which analysis method is selected
-        if "Loss Factor Analysis" in selected_methods:
-            self.on_execute(query_id=1, analysis_type="Loss Factor")
-        elif "Q-Error Analysis" in selected_methods:
-            self.on_execute(query_id=3, analysis_type="Q-Error")
-        elif "P-Error Analysis" in selected_methods:
-            self.on_execute(query_id=4, analysis_type="P-Error")
+        # Check if all required fields are filled
+        has_metrics = bool(detail_filters['metrics'])
+        has_comparison = detail_filters['comparison'] is not None
+        has_value1 = detail_filters['value1'] is not None
+        
+        # For "zwischen", also check if value2 is filled
+        if detail_filters['comparison'] == "zwischen":
+            has_value2 = detail_filters['value2'] is not None
+            all_fields_filled = has_metrics and has_comparison and has_value1 and has_value2
         else:
-            self.update_status("Please select an analysis method")
+            all_fields_filled = has_metrics and has_comparison and has_value1
+        
+        # If all detail fields are filled, use DetailQuery (query_id=5)
+        if all_fields_filled:
+            self.on_execute(query_id=5, analysis_type="Detail Query")
+        else:
+            # Otherwise, execute based on selected analysis method
+            selected_methods = self.ms_analysis_parameter.get_selected()
+            
+            if "Loss Factor Analysis" in selected_methods:
+                self.on_execute(query_id=1, analysis_type="Loss Factor")
+            elif "Q-Error Analysis" in selected_methods:
+                self.on_execute(query_id=3, analysis_type="Q-Error")
+            elif "P-Error Analysis" in selected_methods:
+                self.on_execute(query_id=4, analysis_type="P-Error")
+            else:
+                self.update_status("Please select an analysis method")
     
     def on_execute(self, query_id=1, analysis_type="Loss Factor"):
         """
