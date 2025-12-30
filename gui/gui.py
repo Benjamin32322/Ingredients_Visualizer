@@ -338,11 +338,31 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
 
         self.ms_analysis_parameter.pack(fill="x", pady=(0, 10))
         
-        # Bind to selection changes to update metric fields in third frame
+        # Container for conditional Query Analysis selector
+        self.query_analysis_container = ttk.Frame(self.second_frame)
+        
+        # Create Query Analysis specific selector (initially hidden)
+        query_label = ttk.Label(
+            self.query_analysis_container, 
+            text="📋 Query Selection:", 
+            font=("Arial", 10, "bold")
+        )
+        query_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_query_selection = PopoverMultiSelect(
+            self.query_analysis_container,
+            header="Select Query",
+            items=get_values_for_dropdown("query_graph", "qg_name"),
+            width=35
+        )
+        self.ms_query_selection.pack(fill="x", pady=(0, 10))
+        
+        # Bind to selection changes to update metric fields in third frame and show/hide query selector
         original_apply = self.ms_analysis_parameter._apply_and_close
         def enhanced_apply():
             original_apply()
             self.after(50, self.update_metric_fields)
+            self.after(50, self.update_query_analysis_visibility)
         self.ms_analysis_parameter._apply_and_close = enhanced_apply
         
     # ------------------------------ Detail Filters Section --------------------------------------------------------
@@ -620,6 +640,23 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                 if metric_select:
                     # Update the available items in the metric selector
                     metric_select.set_items(metrics)
+
+    def update_query_analysis_visibility(self):
+        """Show or hide the Query Selection widget based on Analysis Parameter selection"""
+        selected_analysis = self.ms_analysis_parameter.get_selected()
+        
+        if not selected_analysis:
+            # Hide if nothing selected
+            self.query_analysis_container.pack_forget()
+            return
+        
+        analysis_type = selected_analysis[0] if selected_analysis else ""
+        
+        # Show Query Selection only when "Query Analysis" is selected
+        if analysis_type == "Query Analysis":
+            self.query_analysis_container.pack(fill="x", pady=(0, 10))
+        else:
+            self.query_analysis_container.pack_forget()
 
     def clear_results(self):
         """Clear the results display"""
