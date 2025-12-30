@@ -399,13 +399,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_query_selection.pack(fill="x", pady=(0, 10))
         
-        # Bind to selection changes to update metric fields in filter rows
-        original_apply = self.ms_analysis_parameter._apply_and_close
-        def enhanced_apply():
-            original_apply()
-            self.after(50, self.update_metric_fields)
-        self.ms_analysis_parameter._apply_and_close = enhanced_apply
-        
         # Separator for visual distinction
         separator = ttk.Separator(self.third_scrollable_frame, orient="horizontal")
         separator.pack(fill="x", pady=(10, 15))
@@ -473,12 +466,12 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         metric_label = ttk.Label(metric_frame, text="Filter Metric:", font=("Arial", 9))
         metric_label.pack(anchor="w")
         
-        # Dummy values for metrics - will be updated based on analysis type
-        dummy_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"]
+        # All available metrics (not filtered by analysis type)
+        all_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
         metric_select = PopoverMultiSelect(
             metric_frame,
             header="Select Metric",
-            items=dummy_metrics,
+            items=all_metrics,
             width=20,
             height=6
         )
