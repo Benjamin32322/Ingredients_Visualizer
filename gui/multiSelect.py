@@ -125,6 +125,26 @@ class PopoverMultiSelect(ttk.Frame):
         self._top.grid_columnconfigure(0, weight=1)
         self._top.grid_rowconfigure(0, weight=1)
 
+        # Search field
+        search_frame = ttk.Frame(frame)
+        search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        
+        search_label = ttk.Label(search_frame, text="🔍 Search:")
+        search_label.pack(side="left", padx=(0, 5))
+        
+        self._search_var = tk.StringVar()
+        self._search_var.trace_add("write", self._on_search_changed)
+        self._search_entry = ttk.Entry(search_frame, textvariable=self._search_var)
+        self._search_entry.pack(side="left", fill="x", expand=True)
+        
+        # Bind events to ensure Entry remains responsive (similar to detail filter entries)
+        self._search_entry.bind("<Button-1>", self._on_search_entry_click)
+        self._search_entry.bind("<FocusIn>", self._on_search_entry_focus)
+        self._search_entry.bind("<KeyPress>", self._ensure_search_focus)
+        
+        # Store filtered items list
+        self._filtered_items = self._items.copy()
+
         self._listbox = tk.Listbox(
             frame, selectmode="extended",
             height=self._height, exportselection=False
@@ -132,33 +152,34 @@ class PopoverMultiSelect(ttk.Frame):
         scroll = ttk.Scrollbar(frame, orient="vertical", command=self._listbox.yview)
         self._listbox.config(yscrollcommand=scroll.set)
 
-        self._listbox.grid(row=0, column=0, sticky="nsew")
-        scroll.grid(row=0, column=1, sticky="ns")
+        self._listbox.grid(row=1, column=0, sticky="nsew")
+        scroll.grid(row=1, column=1, sticky="ns")
         frame.grid_columnconfigure(0, weight=1)
-        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
 
         btns = ttk.Frame(frame)
-        btns.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        btns.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
         ttk.Button(btns, text="OK", command=self._apply_and_close).pack(side="right")
         ttk.Button(btns, text="Cancel", command=self._close).pack(side="right", padx=(0, 6))
         ttk.Button(btns, text=self._no_label,
                    command=self._no_selection_and_close).pack(side="right", padx=(0, 6))
 
-        for it in self._items:
+        # Populate listbox with all items initially
+        for it in self._filtered_items:
             self._listbox.insert("end", it)
 
         # mark current selection
         if self._selection:
-            for idx, it in enumerate(self._items):
+            for idx, it in enumerate(self._filtered_items):
                 if it in self._selection:
                     self._listbox.selection_set(idx)
 
         self._listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
         self._top.bind("<Escape>", lambda e: self._close())
 
-        # Keep FocusOut as fallback, but click-outside is the real fix
-        self._top.bind("<FocusOut>", lambda e: self._apply_and_close())
+        # Modified FocusOut handler - don't close if focus is on search entry or listbox
+        self._top.bind("<FocusOut>", self._on_focus_out)
 
         # Grab + click-outside
         try:
@@ -171,9 +192,126 @@ class PopoverMultiSelect(ttk.Frame):
         self._top.deiconify()
         self._top.lift()
         self._top.update_idletasks()
+        
+        # Set focus to search entry for immediate typing
+        self._search_entry.focus_set()
+
+    def _on_focus_out(self, event):
+        """Handle FocusOut event - only close if focus truly left the popover window"""
+        if not (self._top and tk.Toplevel.winfo_exists(self._top)):
+            return
+        
+        # Get the widget that now has focus
+        try:
+            focus_widget = self._top.focus_get()
+            # Don't close if focus is on search entry, listbox, or any widget within the popover
+            if focus_widget in [self._search_entry, self._listbox]:
+                return
+            # Also check if focus is on any child widget of the popover
+            if focus_widget and str(focus_widget).startswith(str(self._top)):
+                return
+        except Exception:
+            pass
+        
+        # If focus truly left the popover, apply and close
+        self._apply_and_close()
 
     def _on_listbox_select(self, _evt=None):
         return
+
+    def _on_search_entry_click(self, event):
+        """Handle click events for search Entry to ensure it remains responsive"""
+        try:
+            # Force grab release from the toplevel to allow Entry to get focus
+            try:
+                if self._top:
+                    self._top.grab_release()
+            except tk.TclError:
+                pass
+            
+            # Set focus and cursor
+            event.widget.focus_force()
+            event.widget.icursor(tk.INSERT)
+            
+            # Ensure the widget is in normal state
+            event.widget.config(state='normal')
+            
+            # Reapply grab after a short delay to maintain modal behavior
+            if self._top:
+                self._top.after(10, lambda: self._reapply_grab())
+            
+        except (tk.TclError, AttributeError):
+            pass
+        return "break"
+    
+    def _on_search_entry_focus(self, event):
+        """Handle FocusIn events for search Entry"""
+        try:
+            # Release grab temporarily
+            if self._top:
+                try:
+                    self._top.grab_release()
+                except tk.TclError:
+                    pass
+            
+            # Set focus
+            event.widget.focus_force()
+            
+            # Reapply grab after focus is set
+            if self._top:
+                self._top.after(10, lambda: self._reapply_grab())
+                
+        except (tk.TclError, AttributeError):
+            pass
+    
+    def _ensure_search_focus(self, event):
+        """Ensure search Entry maintains focus during key events"""
+        if event.widget and hasattr(event.widget, 'focus_set'):
+            event.widget.focus_set()
+        return None  # Allow normal key processing to continue
+    
+    def _reapply_grab(self):
+        """Reapply grab_set to maintain modal behavior"""
+        try:
+            if self._top and tk.Toplevel.winfo_exists(self._top):
+                self._top.grab_set()
+        except tk.TclError:
+            pass
+
+    def _on_search_changed(self, *args):
+        """Filter listbox items based on search input (case-insensitive and space-insensitive)"""
+        if not (self._listbox and tk.Listbox.winfo_exists(self._listbox)):
+            return
+        
+        search_text = self._search_var.get()
+        
+        # Normalize search text: remove spaces and convert to lowercase
+        normalized_search = search_text.replace(" ", "").lower()
+        
+        # Get currently selected items from the listbox before clearing
+        current_selection = set()
+        sel_idx = self._listbox.curselection()
+        if sel_idx:
+            current_selection = {self._listbox.get(i) for i in sel_idx}
+        
+        # Clear listbox
+        self._listbox.delete(0, "end")
+        
+        # Filter items: normalize each item and check if search text is contained
+        self._filtered_items = []
+        for item in self._items:
+            normalized_item = item.replace(" ", "").lower()
+            if normalized_search in normalized_item:
+                self._filtered_items.append(item)
+        
+        # Repopulate listbox with filtered items
+        for item in self._filtered_items:
+            self._listbox.insert("end", item)
+        
+        # Restore selection for items that are still visible
+        for idx, item in enumerate(self._filtered_items):
+            if item in current_selection:
+                self._listbox.selection_set(idx)
 
     def _apply_and_close(self):
         if not (self._top and tk.Toplevel.winfo_exists(self._top)):
