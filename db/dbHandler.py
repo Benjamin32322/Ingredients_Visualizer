@@ -7,8 +7,6 @@ import duckdb
 def connect_to_db():
     
     conn = duckdb.connect(database=DB_PATH)
-    conn.execute(open("sql/View_ps_base.sql").read())
-
 
     return conn
 

@@ -146,10 +146,10 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.build_first_frame()
 
     def create_analysis_tools_section(self):
-        """Create the analysis tools section (top-right)"""
+        """Create the plotting section (top-right)"""
         self.second_frame = ttk.LabelFrame(
             self.content_frame,
-            text="🔍 Analysis Parameter",
+            text="� Plotting",
             style="Card.TFrame",
             padding=20
         )
@@ -312,74 +312,114 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.msplus_cost_function.pack(fill="x", pady=(0, 15))
 
-    # ----------------- Analysis Parameter Section -----------------------------------------------------------------------------
+    # ----------------- Plotting Section -----------------------------------------------------------------------------
     
     def build_second_frame(self):
-        """Build the analysis tools section with enhanced layout"""
+        """Build the plotting section - currently empty, reserved for future plotting controls"""
         
         # Section description
         description_label = ttk.Label(
             self.second_frame, 
-            text="Choose your analysis method:",
+            text="Plotting controls will appear here:",
             style="Title.TLabel"
         )
         description_label.pack(anchor="w", pady=(0, 15))
         
-        # Analysis tools with descriptions
-        tools_frame = ttk.Frame(self.second_frame)
-        tools_frame.pack(fill="x")
+        # Placeholder for future plotting controls
+        placeholder_label = ttk.Label(
+            self.second_frame,
+            text="This section is reserved for future plotting configuration options.",
+            font=("Arial", 10),
+            foreground="gray"
+        )
+        placeholder_label.pack(anchor="w", pady=10)
+        
+    # ------------------------------ Detail Filters Section --------------------------------------------------------
+
+    def build_third_frame(self):
+        """Build the detail filters section with dynamic filter rows and scrollbar"""
+        
+        # Create a canvas and scrollbar for scrolling
+        self.third_canvas = tk.Canvas(self.third_frame, highlightthickness=0)
+        self.third_scrollbar = ttk.Scrollbar(self.third_frame, orient="vertical", command=self.third_canvas.yview)
+        self.third_scrollable_frame = ttk.Frame(self.third_canvas)
+        
+        # Configure the canvas
+        self.third_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.third_canvas.configure(scrollregion=self.third_canvas.bbox("all"))
+        )
+        
+        self.third_canvas.create_window((0, 0), window=self.third_scrollable_frame, anchor="nw")
+        self.third_canvas.configure(yscrollcommand=self.third_scrollbar.set)
+        
+        # Pack the scrollbar and canvas
+        self.third_scrollbar.pack(side="right", fill="y")
+        self.third_canvas.pack(side="left", fill="both", expand=True)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel(event):
+            self.third_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        self.third_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Section description
+        description_label = ttk.Label(
+            self.third_scrollable_frame, 
+            text="Configure query parameters and filters:",
+            style="Title.TLabel"
+        )
+        description_label.pack(anchor="w", pady=(0, 15))
+
+        # Analysis Parameter section
+        analysis_label = ttk.Label(self.third_scrollable_frame, text="🔍 Analysis Parameter:", font=("Arial", 10, "bold"))
+        analysis_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_analysis_parameter = PopoverMultiSelect(
-            self.second_frame,
+            self.third_scrollable_frame,
             header="Select Analysis Parameter",
             items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis", "Query Analysis", "Detail Query Analysis"],
             width=35
         )
-
         self.ms_analysis_parameter.pack(fill="x", pady=(0, 10))
         
-        # Query Analysis selector (permanently visible)
-        self.query_analysis_container = ttk.Frame(self.second_frame)
-        self.query_analysis_container.pack(fill="x", pady=(0, 10))
-        
-        # Create Query Analysis specific selector
+        # Query Selection section (permanently visible)
         query_label = ttk.Label(
-            self.query_analysis_container, 
+            self.third_scrollable_frame, 
             text="📋 Query Selection:", 
             font=("Arial", 10, "bold")
         )
         query_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_query_selection = PopoverMultiSelect(
-            self.query_analysis_container,
+            self.third_scrollable_frame,
             header="Select Query",
             items=get_values_for_dropdown("query_graph", "qg_name"),
             width=35
         )
         self.ms_query_selection.pack(fill="x", pady=(0, 10))
         
-        # Bind to selection changes to update metric fields in third frame
+        # Bind to selection changes to update metric fields in filter rows
         original_apply = self.ms_analysis_parameter._apply_and_close
         def enhanced_apply():
             original_apply()
             self.after(50, self.update_metric_fields)
         self.ms_analysis_parameter._apply_and_close = enhanced_apply
         
-    # ------------------------------ Detail Filters Section --------------------------------------------------------
-
-    def build_third_frame(self):
-        """Build the detail filters section with dynamic filter rows"""
+        # Separator for visual distinction
+        separator = ttk.Separator(self.third_scrollable_frame, orient="horizontal")
+        separator.pack(fill="x", pady=(10, 15))
         
-        # Section description
-        description_label = ttk.Label(
-            self.third_frame, 
-            text="Configure detailed result filters:",
-            style="Title.TLabel"
+        # Filter configuration label
+        filter_label = ttk.Label(
+            self.third_scrollable_frame, 
+            text="Filter Configuration:",
+            font=("Arial", 10, "bold")
         )
-        description_label.pack(anchor="w", pady=(0, 15))
+        filter_label.pack(anchor="w", pady=(0, 10))
 
         # Container for all filter rows
-        self.filter_rows_container = ttk.Frame(self.third_frame)
+        self.filter_rows_container = ttk.Frame(self.third_scrollable_frame)
         self.filter_rows_container.pack(fill="x", pady=(0, 10))
         
         # List to store filter row widgets (initialize only once)
@@ -390,7 +430,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             self.add_filter_row()
         
         # Add button container (centered)
-        button_container = ttk.Frame(self.third_frame)
+        button_container = ttk.Frame(self.third_scrollable_frame)
         button_container.pack(fill="x", pady=(5, 10))
         
         # Create a sub-container to center both buttons
