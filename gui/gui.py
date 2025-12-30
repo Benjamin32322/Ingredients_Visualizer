@@ -470,6 +470,8 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         value_label.pack(anchor="w")
         
         value_var = tk.StringVar()
+        # Add validation callback to restrict to numerical values and convert commas to dots
+        value_var.trace_add("write", lambda *args: self.validate_numerical_input(value_var, value_entry))
         value_entry = ttk.Entry(value_frame, textvariable=value_var)
         value_entry.pack(fill="x")
         row_widgets['value_var'] = value_var
@@ -503,6 +505,50 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         print(f"Removed filter row. Remaining rows: {len(self.filter_rows)}")
         self.update_status(f"Filter row removed - {len(self.filter_rows)} row(s) remaining")
+        
+    def validate_numerical_input(self, string_var, entry_widget):
+        """Validate and normalize numerical input: only allow numbers, dots, minus, and convert commas to dots"""
+        # Prevent recursive calls
+        validation_attr = f'_validating_{id(string_var)}'
+        if hasattr(self, validation_attr) and getattr(self, validation_attr):
+            return
+        
+        setattr(self, validation_attr, True)
+        try:
+            current_text = string_var.get()
+            cursor_pos = entry_widget.index(tk.INSERT)
+            
+            # Normalize: replace comma with dot
+            normalized_text = current_text.replace(',', '.')
+            
+            # Validate: only allow digits, dots, minus sign, and spaces
+            valid_chars = set('0123456789.- ')
+            filtered_text = ''.join(c for c in normalized_text if c in valid_chars)
+            
+            # Prevent multiple dots
+            if filtered_text.count('.') > 1:
+                # Keep only the first dot
+                parts = filtered_text.split('.')
+                filtered_text = parts[0] + '.' + ''.join(parts[1:])
+            
+            # Prevent multiple minus signs and ensure minus is only at the beginning
+            if filtered_text.count('-') > 1:
+                # Keep only the first minus
+                filtered_text = filtered_text.replace('-', '', filtered_text.count('-') - 1)
+            if '-' in filtered_text and filtered_text.index('-') != 0:
+                # Move minus to the beginning
+                filtered_text = '-' + filtered_text.replace('-', '')
+            
+            # Update if changed
+            if filtered_text != current_text:
+                string_var.set(filtered_text)
+                # Restore cursor position
+                try:
+                    entry_widget.icursor(min(cursor_pos, len(filtered_text)))
+                except tk.TclError:
+                    pass
+        finally:
+            setattr(self, validation_attr, False)
         
         
         
