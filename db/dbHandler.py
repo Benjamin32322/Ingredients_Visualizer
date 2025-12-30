@@ -1,5 +1,5 @@
 # dbHandler.py
-from config import DB_PATH, SQL_PATH_LOSS_FACTOR, SQL_PATH_Q_ERROR, SQL_PATH_P_ERROR, SQL_PATH_PLAENE, SQL_PATH_DETAILED_QUERY, SQL_PATH_QUERY_ANALYSIS
+from config import DB_PATH, SQL_PATH_LOSS_FACTOR, SQL_PATH_Q_ERROR, SQL_PATH_P_ERROR, SQL_PATH_PLAENE, SQL_PATH_DETAIL_ANALYSIS, SQL_PATH_QUERY_ANALYSIS
 
 import duckdb
 
@@ -90,7 +90,7 @@ def execute_query(file_nr,filters=None):
         
         case 5:
             try: 
-                sql = open(SQL_PATH_DETAILED_QUERY).read()
+                sql = open(SQL_PATH_DETAIL_ANALYSIS).read()
                 sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
                 sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
                 sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))

@@ -53,8 +53,10 @@ class QueryHandlersMixin:
                 self.on_execute(query_id=3, analysis_type="Q-Error")
             elif "P-Error Analysis" in selected_methods:
                 self.on_execute(query_id=4, analysis_type="P-Error")
+            elif "Detail Analysis" in selected_methods:
+                self.on_execute(query_id=5, analysis_type="Detail Analysis")
             elif "Query Analysis" in selected_methods:
-                self.on_execute(query_id=6, analysis_type="Detail Query")
+                self.on_execute(query_id=6, analysis_type="Query Analysis")
             else:
                 self.update_status("Please select an analysis method")
         print("=" * 60)
