@@ -101,7 +101,8 @@ class QueryHandlersMixin:
         else:
             filters = {
                 "PG_NAME_FILTER": pg_filter,
-                "CP_NAME_FILTER": cp_filter
+                "CP_NAME_FILTER": cp_filter,
+                "BPC_NAME_FILTER": bpc_filter
             }
         
         filters.update(cf_filter)
