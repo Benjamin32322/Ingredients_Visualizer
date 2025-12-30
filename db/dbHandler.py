@@ -7,6 +7,8 @@ import duckdb
 def connect_to_db():
     
     conn = duckdb.connect(database=DB_PATH)
+    conn.execute(open("sql/View_ps_base.sql").read())
+
 
     return conn
 
@@ -28,6 +30,7 @@ def execute_query(file_nr,filters=None):
                 sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+                sql = sql.replace("{QUERY_NAME_FILTER}", filters.get("QUERY_NAME_FILTER"))
 
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
@@ -45,6 +48,7 @@ def execute_query(file_nr,filters=None):
                 sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+                
 
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
@@ -62,6 +66,8 @@ def execute_query(file_nr,filters=None):
                 sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+                sql = sql.replace("{QUERY_NAME_FILTER}", filters.get("QUERY_NAME_FILTER"))
+
 
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
@@ -81,6 +87,8 @@ def execute_query(file_nr,filters=None):
                 sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+                sql = sql.replace("{QUERY_NAME_FILTER}", filters.get("QUERY_NAME_FILTER"))
+
 
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
@@ -100,6 +108,8 @@ def execute_query(file_nr,filters=None):
                 sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
                 sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
                 sql = sql.replace("{DETAIL_METRIC_FILTER}", filters.get("DETAIL_METRIC_FILTER"))
+                sql = sql.replace("{QUERY_NAME_FILTER}", filters.get("QUERY_NAME_FILTER"))
+
                 
                 print("\n" + "="*80)
                 print("DEBUG: Final SQL Query (query_id=5):")

@@ -30,6 +30,7 @@ WHERE 1=1
   {CF_HOST_ID_FILTER}
   {PG_NAME_FILTER}
   {CP_NAME_FILTER}
+  {QUERY_NAME_FILTER}
 
 GROUP BY pg_name, cp_name, bpc_name, bpi_cf_join_bundle, bpi_cf_mat, bpi_cf_concat, wp_cf_host_id
 

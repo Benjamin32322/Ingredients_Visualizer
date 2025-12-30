@@ -73,10 +73,12 @@ class QueryHandlersMixin:
         selected_cp = self.ms_cardinality_provider.get_selected()
         selected_bpc = self.ms_build_plan_class.get_selected()
         selected_cf = self.msplus_cost_function.get_selected()
+        selected_qg = self.ms_query_selection.get_selected()
 
         pg_filter = build_filter("pg_name", selected_pg)
         cp_filter = build_filter("cp_name", selected_cp)
         bpc_filter = build_filter("bpc_name", selected_bpc)
+        qg_filter = build_filter("ps_qg", selected_qg)
         cf_filter = build_cost_filters(selected_cf)
         
         # Use different filter names based on query type
@@ -84,14 +86,16 @@ class QueryHandlersMixin:
             filters = {
                 "PG_NAME_FILTER": pg_filter,
                 "CP_NAME_FILTER": cp_filter,
-                "BPC_NAME_FILTER": bpc_filter
+                "BPC_NAME_FILTER": bpc_filter,
+                "QUERY_NAME_FILTER": qg_filter
             }
         elif query_id == 5:
             # Detail Query requires DETAIL_METRIC_FILTER and BPC_NAME_FILTER
             filters = {
                 "PG_NAME_FILTER": pg_filter,
                 "CP_NAME_FILTER": cp_filter,
-                "BPC_NAME_FILTER": bpc_filter
+                "BPC_NAME_FILTER": bpc_filter,
+                "QUERY_NAME_FILTER": qg_filter
             }
             # Build detail metric filter
             detail_filter_values = self.get_detail_filter_values()
@@ -104,7 +108,8 @@ class QueryHandlersMixin:
             filters = {
                 "PG_NAME_FILTER": pg_filter,
                 "CP_NAME_FILTER": cp_filter,
-                "BPC_NAME_FILTER": bpc_filter
+                "BPC_NAME_FILTER": bpc_filter,
+                "QUERY_NAME_FILTER": qg_filter
             }
         
         filters.update(cf_filter)

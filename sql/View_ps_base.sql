@@ -10,7 +10,13 @@ SELECT
   bpi.bpi_cf_mat,
   bpi.bpi_cf_concat,
   wp.wp_cf_host_id,
-  ps.ps_qerr_cost_pg
+  ps.ps_qerr_cost_pg,
+  ps.ps_sum_card_build,
+  ps.ps_sum_card_probe,
+  ps.ps_sum_card_pc,
+  ps.ps_max_card_build,
+  ps.ps_max_card_probe,
+  ps.ps_max_card_pc
 
 FROM plan_summary ps
 
