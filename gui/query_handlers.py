@@ -196,9 +196,11 @@ class QueryHandlersMixin:
             "avg_lf": "AVG(ps_loss_factor)",
             "median_lf": "MEDIAN(ps_loss_factor)",
             "max_lf": "MAX(ps_loss_factor)",
-            "avg_qerr": "AVG(ps_qerr)",
-            "median_qerr": "MEDIAN(ps_qerr)",
-            "max_qerr": "MAX(ps_qerr)",
+            "avg_qerr": "AVG(ps_qerr_cost_pg)",
+            "median_qerr": "MEDIAN(ps_qerr_cost_pg)",
+            "max_qerr": "MAX(ps_qerr_cost_pg)",
+
+            # Need to be changed accordingly
             "avg_perr": "AVG(ps_perr)",
             "median_perr": "MEDIAN(ps_perr)",
             "max_perr": "MAX(ps_perr)"

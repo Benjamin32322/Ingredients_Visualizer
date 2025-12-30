@@ -7,6 +7,7 @@ import duckdb
 def connect_to_db():
     
     conn = duckdb.connect(database=DB_PATH)
+
     return conn
 
 def execute_query(file_nr,filters=None):

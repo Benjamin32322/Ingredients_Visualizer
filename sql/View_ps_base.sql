@@ -9,7 +9,8 @@ SELECT
   bpi.bpi_cf_join_bundle,
   bpi.bpi_cf_mat,
   bpi.bpi_cf_concat,
-  wp.wp_cf_host_id
+  wp.wp_cf_host_id,
+  ps.ps_qerr_cost_pg
 
 FROM plan_summary ps
 
