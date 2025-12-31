@@ -74,6 +74,7 @@ class QueryHandlersMixin:
         selected_bpc = self.ms_build_plan_class.get_selected()
         selected_cf = self.msplus_cost_function.get_selected()
         selected_qg = self.ms_query_selection.get_selected()
+        selected_plot_types = self.ms_plot_type.get_selected()
 
         pg_filter = build_filter("pg_name", selected_pg)
         cp_filter = build_filter("cp_name", selected_cp)

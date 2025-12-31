@@ -315,24 +315,27 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     # ----------------- Plotting Section -----------------------------------------------------------------------------
     
     def build_second_frame(self):
-        """Build the plotting section - currently empty, reserved for future plotting controls"""
+        """Build the plotting section with plot type selection"""
         
         # Section description
         description_label = ttk.Label(
             self.second_frame, 
-            text="Plotting controls will appear here:",
+            text="Configure your plot visualization:",
             style="Title.TLabel"
         )
         description_label.pack(anchor="w", pady=(0, 15))
         
-        # Placeholder for future plotting controls
-        placeholder_label = ttk.Label(
+        # Plot Type section
+        plot_type_label = ttk.Label(self.second_frame, text="📊 Plot Type:", font=("Arial", 10, "bold"))
+        plot_type_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_plot_type = PopoverMultiSelect(
             self.second_frame,
-            text="This section is reserved for future plotting configuration options.",
-            font=("Arial", 10),
-            foreground="gray"
+            header="Select Plot Type",
+            items=["Bar Chart", "Box Plot", "Graph", "Scatter Plot"],
+            width=35
         )
-        placeholder_label.pack(anchor="w", pady=10)
+        self.ms_plot_type.pack(fill="x", pady=(0, 10))
         
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
