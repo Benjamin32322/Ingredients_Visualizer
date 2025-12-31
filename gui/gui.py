@@ -6,7 +6,7 @@ from gui.multiSelect import PopoverMultiSelect, MultiSelectPlus
 from gui.style import setup_application_styles
 from gui.responsiveness import ResponsivenessMixin
 from gui.query_handlers import QueryHandlersMixin
-from plotting.plotting import plot_treeview
+from plotting.treeview import plot_treeview
 
 
 

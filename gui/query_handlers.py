@@ -4,7 +4,7 @@ Handles database query execution and result processing
 """
 
 from db.dbHandler import build_filter, build_cost_filters, execute_query
-from plotting.plotting import plot_treeview
+from plotting.treeview import plot_treeview
 
 
 class QueryHandlersMixin:
