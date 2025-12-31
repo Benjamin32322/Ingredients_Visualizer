@@ -14,8 +14,10 @@ class ResponsivenessMixin:
         # Bind a global handler to restore Entry focus when clicking on the main window
         self.bind_all("<Button-1>", self.on_global_click)
         
-        # Schedule periodic focus restoration
-        self.after(1000, self.periodic_focus_check)
+        # Schedule periodic focus restoration and track the after_id
+        after_id = self.after(1000, self.periodic_focus_check)
+        if hasattr(self, '_after_ids'):
+            self._after_ids.append(after_id)
     
     def on_global_click(self, event):
         """Handle global clicks to maintain Entry widget responsiveness"""
@@ -24,6 +26,10 @@ class ResponsivenessMixin:
     
     def periodic_focus_check(self):
         """Periodically ensure Entry widgets remain responsive"""
+        # Stop if window is closing
+        if hasattr(self, '_is_closing') and self._is_closing:
+            return
+        
         try:
             # Check if Entry widgets exist and are responsive
             if hasattr(self, 'eingabe_detail_entry') and self.eingabe_detail_entry.winfo_exists():
@@ -37,8 +43,10 @@ class ResponsivenessMixin:
             # Widget might have been destroyed
             pass
         
-        # Schedule next check
-        self.after(1000, self.periodic_focus_check)
+        # Schedule next check and track the after_id
+        after_id = self.after(1000, self.periodic_focus_check)
+        if hasattr(self, '_after_ids'):
+            self._after_ids.append(after_id)
     
     def on_entry_focus(self, event):
         """Handle focus events for Entry widgets to ensure they remain responsive"""

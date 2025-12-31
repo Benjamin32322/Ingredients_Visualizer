@@ -15,6 +15,10 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         super().__init__()
         self.title("Ingredients Visualizer - Advanced Database Query Interface")
         
+        # Track scheduled after callbacks for cleanup
+        self._after_ids = []
+        self._is_closing = False
+        
         # Configure window
         self.attributes("-fullscreen", True)
         
@@ -34,16 +38,24 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         # Handle window state changes to ensure consistent sizing
         def _handle_window_state_change():
             """Monitor window state and ensure consistent sizing"""
-            current_state = self.state()
-            if hasattr(self, '_last_state'):
-                # If we're coming back from minimized state and not in fullscreen
-                if (self._last_state == "iconic" and 
-                    current_state == "normal" and 
-                    not self.attributes("-fullscreen")):
-                    self.geometry(self._default_geometry)
-            self._last_state = current_state
-            # Schedule next check
-            self.after(100, _handle_window_state_change)
+            if self._is_closing:
+                return  # Stop if window is closing
+            
+            try:
+                current_state = self.state()
+                if hasattr(self, '_last_state'):
+                    # If we're coming back from minimized state and not in fullscreen
+                    if (self._last_state == "iconic" and 
+                        current_state == "normal" and 
+                        not self.attributes("-fullscreen")):
+                        self.geometry(self._default_geometry)
+                self._last_state = current_state
+                # Schedule next check
+                after_id = self.after(100, _handle_window_state_change)
+                self._after_ids.append(after_id)
+            except tk.TclError:
+                # Window is being destroyed
+                pass
         
         # Initialize state tracking
         self._last_state = self.state()
@@ -58,8 +70,12 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             original_iconify()
         self.iconify = _iconify_with_fullscreen_exit
         
+        # Bind window close event
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
         # Start monitoring window state
-        self.after(100, _handle_window_state_change)
+        after_id = self.after(100, _handle_window_state_change)
+        self._after_ids.append(after_id)
 
         # Configure modern styling
         self.setup_styles()
@@ -74,6 +90,21 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         # Initialize focus management
         self.setup_focus_management()
+    
+    def on_closing(self):
+        """Handle window close event properly"""
+        self._is_closing = True
+        
+        # Cancel all scheduled after callbacks
+        for after_id in self._after_ids:
+            try:
+                self.after_cancel(after_id)
+            except:
+                pass
+        
+        # Destroy the window and quit the application
+        self.destroy()
+        self.quit()
 
     def setup_styles(self):
         """Configure modern styling for the application"""

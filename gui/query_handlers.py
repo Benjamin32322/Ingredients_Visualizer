@@ -127,7 +127,14 @@ class QueryHandlersMixin:
             detail_filter_values=detail_filter_values if query_id == 5 else None
         )
         
-        plot_treeview(columns, result, params_summary)
+        # Check if a plot type is selected
+        if selected_plot_types and len(selected_plot_types) > 0:
+            # Plot type is selected, call plotting method
+            plot_type = selected_plot_types[0]  # Take the first selected plot type
+            self.create_plot(columns, result, params_summary, plot_type)
+        else:
+            # No plot type selected, show treeview (table)
+            plot_treeview(columns, result, params_summary)
         
         # Update status and restore focus
         self.update_status(f"{analysis_type} query executed - {len(result)} results found")
@@ -245,3 +252,19 @@ class QueryHandlersMixin:
         else:
             print(f"  -> No valid conditions, returning '1=1'")
             return "1=1"
+    
+    def create_plot(self, columns, data, params_summary, plot_type):
+        """
+        Create a plot visualization based on the selected plot type
+        
+        Args:
+            columns (list): Column names from query results
+            data (list): Query result data
+            params_summary (str): Parameter summary string
+            plot_type (str): Type of plot ("Bar Chart", "Box Plot", "Graph", "Scatter Plot")
+        """
+        # Import plotting function from plotting module
+        from plotting.plotting import create_plot_window
+        
+        # Call the plotting function
+        create_plot_window(columns, data, params_summary, plot_type)
