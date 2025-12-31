@@ -346,7 +346,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     # ----------------- Plotting Section -----------------------------------------------------------------------------
     
     def build_second_frame(self):
-        """Build the plotting section with plot type selection"""
+        """Build the plotting section with plot type selection and axis configuration"""
         
         # Section description
         description_label = ttk.Label(
@@ -367,6 +367,30 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             width=35
         )
         self.ms_plot_type.pack(fill="x", pady=(0, 10))
+        
+        # X-Axis section
+        x_axis_label = ttk.Label(self.second_frame, text="📐 X-Axis:", font=("Arial", 10, "bold"))
+        x_axis_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_x_axis = PopoverMultiSelect(
+            self.second_frame,
+            header="Select X-Axis",
+            items=["pg_name", "cp_name", "bpc_name", "qg_name", "avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"],
+            width=35
+        )
+        self.ms_x_axis.pack(fill="x", pady=(0, 10))
+        
+        # Y-Axis section
+        y_axis_label = ttk.Label(self.second_frame, text="📏 Y-Axis:", font=("Arial", 10, "bold"))
+        y_axis_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_y_axis = PopoverMultiSelect(
+            self.second_frame,
+            header="Select Y-Axis",
+            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"],
+            width=35
+        )
+        self.ms_y_axis.pack(fill="x", pady=(0, 10))
         
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
