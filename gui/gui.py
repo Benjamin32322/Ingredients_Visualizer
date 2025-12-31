@@ -375,7 +375,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_x_axis = PopoverMultiSelect(
             self.second_frame,
             header="Select X-Axis",
-            items=["pg_name", "cp_name", "bpc_name", "qg_name", "avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr"],
+            items=["Configuration Parameters"],
             width=35
         )
         self.ms_x_axis.pack(fill="x", pady=(0, 10))
@@ -387,7 +387,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_y_axis = PopoverMultiSelect(
             self.second_frame,
             header="Select Y-Axis",
-            items=["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"],
+            items=["Loss Factor", "Q-Error", "P-Error"],
             width=35
         )
         self.ms_y_axis.pack(fill="x", pady=(0, 10))
