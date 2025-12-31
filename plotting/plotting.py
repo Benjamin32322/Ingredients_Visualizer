@@ -7,7 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 
 
-def create_plot_window(columns, data, params_summary, plot_type):
+def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None):
     """
     Create a plot visualization window based on the selected plot type
     
@@ -16,6 +16,8 @@ def create_plot_window(columns, data, params_summary, plot_type):
         data (list): Query result data (list of tuples/lists)
         params_summary (str): Parameter summary string for display
         plot_type (str): Type of plot ("Bar Chart", "Box Plot", "Graph", "Scatter Plot")
+        x_axis (str): Column name for X-axis (optional)
+        y_axis (str): Column name for Y-axis (optional)
     """
     # Create new window
     plot_window = tk.Toplevel()
@@ -44,8 +46,14 @@ def create_plot_window(columns, data, params_summary, plot_type):
     fig, ax = plt.subplots(figsize=(10, 6))
     
     # TODO: Implement different plot types
-    # For now, show a placeholder message
-    ax.text(0.5, 0.5, f"'{plot_type}' visualization\nwill be implemented here.\n\nData shape: {df.shape}",
+    # For now, show a placeholder message with axis information
+    message = f"'{plot_type}' visualization\nwill be implemented here.\n\nData shape: {df.shape}"
+    if x_axis:
+        message += f"\nX-Axis: {x_axis}"
+    if y_axis:
+        message += f"\nY-Axis: {y_axis}"
+    
+    ax.text(0.5, 0.5, message,
             ha='center', va='center', fontsize=14, transform=ax.transAxes)
     ax.set_title(f"{plot_type} - Placeholder")
     

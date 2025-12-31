@@ -75,6 +75,8 @@ class QueryHandlersMixin:
         selected_cf = self.msplus_cost_function.get_selected()
         selected_qg = self.ms_query_selection.get_selected()
         selected_plot_types = self.ms_plot_type.get_selected()
+        selected_x_axis = self.ms_x_axis.get_selected()
+        selected_y_axis = self.ms_y_axis.get_selected()
 
         pg_filter = build_filter("pg_name", selected_pg)
         cp_filter = build_filter("cp_name", selected_cp)
@@ -131,7 +133,9 @@ class QueryHandlersMixin:
         if selected_plot_types and len(selected_plot_types) > 0:
             # Plot type is selected, call plotting method
             plot_type = selected_plot_types[0]  # Take the first selected plot type
-            self.create_plot(columns, result, params_summary, plot_type)
+            x_axis = selected_x_axis[0] if selected_x_axis and len(selected_x_axis) > 0 else None
+            y_axis = selected_y_axis[0] if selected_y_axis and len(selected_y_axis) > 0 else None
+            self.create_plot(columns, result, params_summary, plot_type, x_axis, y_axis)
         else:
             # No plot type selected, show treeview (table)
             plot_treeview(columns, result, params_summary)
@@ -253,7 +257,7 @@ class QueryHandlersMixin:
             print(f"  -> No valid conditions, returning '1=1'")
             return "1=1"
     
-    def create_plot(self, columns, data, params_summary, plot_type):
+    def create_plot(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None):
         """
         Create a plot visualization based on the selected plot type
         
@@ -262,9 +266,11 @@ class QueryHandlersMixin:
             data (list): Query result data
             params_summary (str): Parameter summary string
             plot_type (str): Type of plot ("Bar Chart", "Box Plot", "Graph", "Scatter Plot")
+            x_axis (str): Column name for X-axis (optional)
+            y_axis (str): Column name for Y-axis (optional)
         """
         # Import plotting function from plotting module
         from plotting.plotting import create_plot_window
         
         # Call the plotting function
-        create_plot_window(columns, data, params_summary, plot_type)
+        create_plot_window(columns, data, params_summary, plot_type, x_axis, y_axis)
