@@ -10,43 +10,52 @@ from plotting.style_plot import get_color_palette, apply_plot_style
 
 # ======================== PLOT CONFIGURATION MAPPINGS ========================
 
-def get_plot_config(y_axis):
+def get_plot_config(y_axis, metric=None, top_n=5):
     """
     Get the plotting configuration based on the selected Y-axis.
     This makes it easy to add new Y-axis configurations.
     
     Args:
         y_axis (str): Selected Y-axis value
+        metric (str): Metric selection ("Highest" or "Lowest", optional)
+        top_n (int): Number of data points to display (default: 5)
     
     Returns:
-        dict: Configuration with 'column', 'label', 'top_n' keys, or None if not configured
+        dict: Configuration with 'column', 'label', 'top_n', 'sort_ascending' keys, or None if not configured
     """
+    # Determine sort order based on metric
+    # Default to "Highest" (descending) if not specified
+    if metric == "Lowest":
+        sort_ascending = True
+    else:
+        sort_ascending = False
+    
     # Define configurations for different Y-axis selections
     configs = {
         "Loss Factor": {
             "column": "avg_lf",
             "label": "Average Loss Factor",
-            "top_n": 5,
-            "sort_ascending": False  # Highest values first
+            "top_n": top_n,
+            "sort_ascending": sort_ascending
         },
         "Q-Error": {
             "column": "avg_qerr",
             "label": "Average Q-Error",
-            "top_n": 5,
-            "sort_ascending": False
+            "top_n": top_n,
+            "sort_ascending": sort_ascending
         },
         "P-Error": {
             "column": "avg_perr",
             "label": "Average P-Error",
-            "top_n": 5,
-            "sort_ascending": False
+            "top_n": top_n,
+            "sort_ascending": sort_ascending
         },
         # Add more configurations here as needed
         # "Your Y-Axis Name": {
         #     "column": "column_name_in_data",
         #     "label": "Display Label",
-        #     "top_n": 10,
-        #     "sort_ascending": False
+        #     "top_n": top_n,
+        #     "sort_ascending": sort_ascending
         # }
     }
     
@@ -224,7 +233,7 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
     plt.tight_layout()
 
 
-def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None):
+def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None, metric=None, plot_number=5):
     """
     Create a plot visualization window based on the selected plot type
     
@@ -235,6 +244,8 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
         plot_type (str): Type of plot ("Bar Chart", "Box Plot", "Graph", "Scatter Plot")
         x_axis (str): Column name for X-axis (optional)
         y_axis (str): Column name for Y-axis (optional)
+        metric (str): Metric selection ("Highest" or "Lowest", optional)
+        plot_number (int): Number of data points to display (default: 5)
     """
     # Create new window
     plot_window = tk.Toplevel()
@@ -266,7 +277,7 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
     fig, ax = plt.subplots(figsize=(11, 7))
     
     # Check if we have a configuration for this Y-axis
-    plot_config = get_plot_config(y_axis) if y_axis else None
+    plot_config = get_plot_config(y_axis, metric, plot_number) if y_axis else None
     
     if plot_config and plot_config['column'] in df.columns:
         # We have a valid configuration - create the plot
@@ -277,8 +288,9 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
         # Get top N values
         df_sorted = df.nlargest(top_n, column) if not sort_ascending else df.nsmallest(top_n, column)
         
-        # Determine title
-        title = f"Top {top_n} {plot_config['label']}"
+        # Determine title based on metric selection
+        metric_text = metric if metric else "Highest"
+        title = f"{metric_text} {top_n} {plot_config['label']}"
         
         # Create the appropriate plot type
         if plot_type == "Bar Chart":

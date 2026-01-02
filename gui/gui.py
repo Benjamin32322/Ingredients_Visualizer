@@ -396,13 +396,38 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         metric_label = ttk.Label(self.second_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
         metric_label.pack(anchor="w", pady=(5, 2))
         
+        # Create a horizontal frame for metric selector and number input
+        metric_frame = ttk.Frame(self.second_frame)
+        metric_frame.pack(fill="x", pady=(0, 10))
+        
+        # Metric selector on the left
+        metric_select_frame = ttk.Frame(metric_frame)
+        metric_select_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        
         self.ms_metric = PopoverMultiSelect(
-            self.second_frame,
+            metric_select_frame,
             header="Select Metric",
-            items=["Average", "Median", "Maximum", "Minimum", "Sum", "Count"],
-            width=35
+            items=["Highest", "Lowest"],
+            width=25
         )
-        self.ms_metric.pack(fill="x", pady=(0, 10))
+        self.ms_metric.pack(fill="x")
+        
+        # Number input on the right
+        number_input_frame = ttk.Frame(metric_frame)
+        number_input_frame.pack(side="left", fill="both", padx=(5, 0))
+        
+        number_label = ttk.Label(number_input_frame, text="Number:", font=("Arial", 9))
+        number_label.pack(anchor="w")
+        
+        self.plot_number_var = tk.StringVar(value="5")
+        self.plot_number_var.trace_add("write", lambda *args: self.validate_plot_number_input())
+        self.plot_number_entry = ttk.Entry(number_input_frame, textvariable=self.plot_number_var, width=10)
+        self.plot_number_entry.pack(fill="x")
+        
+        # Bind events to ensure Entry remains responsive
+        self.plot_number_entry.bind("<Button-1>", self.on_entry_click)
+        self.plot_number_entry.bind("<FocusIn>", self.on_entry_focus)
+        self.plot_number_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
@@ -652,6 +677,31 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                     pass
         finally:
             setattr(self, validation_attr, False)
+    
+    def validate_plot_number_input(self):
+        """Validate plot number input: only allow positive integers"""
+        # Prevent recursive calls
+        if hasattr(self, '_validating_plot_number') and self._validating_plot_number:
+            return
+        
+        self._validating_plot_number = True
+        try:
+            current_text = self.plot_number_var.get()
+            cursor_pos = self.plot_number_entry.index(tk.INSERT)
+            
+            # Validate: only allow digits (positive integers only)
+            filtered_text = ''.join(c for c in current_text if c.isdigit())
+            
+            # Update if changed
+            if filtered_text != current_text:
+                self.plot_number_var.set(filtered_text)
+                # Restore cursor position
+                try:
+                    self.plot_number_entry.icursor(min(cursor_pos, len(filtered_text)))
+                except tk.TclError:
+                    pass
+        finally:
+            self._validating_plot_number = False
         
         
         

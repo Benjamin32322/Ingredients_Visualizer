@@ -135,7 +135,16 @@ class QueryHandlersMixin:
             plot_type = selected_plot_types[0]  # Take the first selected plot type
             x_axis = selected_x_axis[0] if selected_x_axis and len(selected_x_axis) > 0 else None
             y_axis = selected_y_axis[0] if selected_y_axis and len(selected_y_axis) > 0 else None
-            self.create_plot(columns, result, params_summary, plot_type, x_axis, y_axis)
+            
+            # Get metric selection (Highest/Lowest)
+            selected_metrics = self.ms_metric.get_selected()
+            metric = selected_metrics[0] if selected_metrics and len(selected_metrics) > 0 else None
+            
+            # Get number of data points to plot
+            plot_number_str = self.plot_number_var.get().strip()
+            plot_number = int(plot_number_str) if plot_number_str and plot_number_str.isdigit() else 5
+            
+            self.create_plot(columns, result, params_summary, plot_type, x_axis, y_axis, metric, plot_number)
         else:
             # No plot type selected, show treeview (table)
             plot_treeview(columns, result, params_summary)
@@ -257,7 +266,7 @@ class QueryHandlersMixin:
             print(f"  -> No valid conditions, returning '1=1'")
             return "1=1"
     
-    def create_plot(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None):
+    def create_plot(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, metric=None, plot_number=5):
         """
         Create a plot visualization based on the selected plot type
         
@@ -268,9 +277,11 @@ class QueryHandlersMixin:
             plot_type (str): Type of plot ("Bar Chart", "Box Plot", "Graph", "Scatter Plot")
             x_axis (str): Column name for X-axis (optional)
             y_axis (str): Column name for Y-axis (optional)
+            metric (str): Metric selection ("Highest" or "Lowest")
+            plot_number (int): Number of data points to display (default: 5)
         """
         # Import plotting function from plotting module
         from plotting.plotting import create_plot_window
         
         # Call the plotting function
-        create_plot_window(columns, data, params_summary, plot_type, x_axis, y_axis)
+        create_plot_window(columns, data, params_summary, plot_type, x_axis, y_axis, metric, plot_number)
