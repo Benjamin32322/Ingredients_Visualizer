@@ -106,6 +106,124 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
     plt.tight_layout()
 
 
+def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
+    """
+    Create a box plot
+    
+    Args:
+        ax: Matplotlib axes object
+        df: DataFrame with data
+        x_col: Column name for x-axis grouping (or None for single box)
+        y_col: Column name for y-axis values
+        title: Chart title
+        y_label: Y-axis label
+        colors: List of colors to use
+    """
+    if x_col and x_col in df.columns:
+        # Group by x_col and create box plot for each group
+        groups = df.groupby(x_col)[y_col].apply(list)
+        bp = ax.boxplot(groups.values, labels=groups.index.astype(str), patch_artist=True)
+        
+        # Color each box
+        for patch, color in zip(bp['boxes'], colors[:len(groups)]):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+    else:
+        # Single box plot for all data
+        bp = ax.boxplot([df[y_col].tolist()], labels=['All Data'], patch_artist=True)
+        bp['boxes'][0].set_facecolor(colors[0])
+        bp['boxes'][0].set_alpha(0.7)
+    
+    # Styling
+    ax.set_xlabel(x_col if x_col else "", fontsize=12, fontweight='bold')
+    ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+    
+    # Apply custom styling
+    apply_plot_style(ax)
+    plt.tight_layout()
+
+
+def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
+    """
+    Create a scatter plot
+    
+    Args:
+        ax: Matplotlib axes object
+        df: DataFrame with data
+        x_col: Column name for x-axis (or index if None)
+        y_col: Column name for y-axis values
+        title: Chart title
+        y_label: Y-axis label
+        colors: List of colors to use
+    """
+    if x_col and x_col in df.columns:
+        x_values = df[x_col]
+        x_axis_label = x_col
+    else:
+        x_values = range(len(df))
+        x_axis_label = "Index"
+    
+    y_values = df[y_col]
+    
+    # Create scatter plot with gradient colors
+    scatter = ax.scatter(x_values, y_values, c=range(len(df)), 
+                        cmap=plt.cm.colors.ListedColormap(colors[:len(df)]),
+                        s=100, alpha=0.7, edgecolors='black', linewidth=1.5)
+    
+    # Styling
+    ax.set_xlabel(x_axis_label, fontsize=12, fontweight='bold')
+    ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+    
+    # Apply custom styling
+    apply_plot_style(ax)
+    plt.tight_layout()
+
+
+def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
+    """
+    Create a line graph
+    
+    Args:
+        ax: Matplotlib axes object
+        df: DataFrame with data
+        x_col: Column name for x-axis (or index if None)
+        y_col: Column name for y-axis values
+        title: Chart title
+        y_label: Y-axis label
+        colors: List of colors to use
+    """
+    if x_col and x_col in df.columns:
+        x_values = df[x_col]
+        x_axis_label = x_col
+    else:
+        x_values = range(len(df))
+        x_axis_label = "Rank"
+    
+    y_values = df[y_col]
+    
+    # Create line plot
+    ax.plot(x_values, y_values, color=colors[0], linewidth=2.5, marker='o', 
+            markersize=8, markerfacecolor=colors[1], markeredgecolor='black', 
+            markeredgewidth=1.5)
+    
+    # Add value labels at each point
+    for i, (x, y) in enumerate(zip(x_values, y_values)):
+        ax.text(x, y, f'{y:.2f}', ha='center', va='bottom', 
+                fontsize=9, fontweight='bold')
+    
+    # Styling
+    ax.set_xlabel(x_axis_label, fontsize=12, fontweight='bold')
+    ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+    ax.grid(True, alpha=0.3)
+    
+    # Apply custom styling
+    apply_plot_style(ax)
+    plt.tight_layout()
+
+
 def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None):
     """
     Create a plot visualization window based on the selected plot type
@@ -165,11 +283,17 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
         # Create the appropriate plot type
         if plot_type == "Bar Chart":
             create_bar_chart(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+        elif plot_type == "Box Plot":
+            create_box_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+        elif plot_type == "Scatter Plot":
+            create_scatter_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+        elif plot_type == "Graph":
+            create_line_graph(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
         else:
-            # Placeholder for other plot types
-            ax.text(0.5, 0.5, f"'{plot_type}' for '{y_axis}'\nnot yet implemented.\n\nUse 'Bar Chart' for now.",
+            # Unknown plot type
+            ax.text(0.5, 0.5, f"Plot type '{plot_type}' is not supported.\n\nAvailable types:\n- Bar Chart\n- Box Plot\n- Scatter Plot\n- Graph",
                     ha='center', va='center', fontsize=14, transform=ax.transAxes)
-            ax.set_title(f"{plot_type} - {y_axis}")
+            ax.set_title(f"Unsupported Plot Type: {plot_type}")
     
     else:
         # No configuration found - show placeholder

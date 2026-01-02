@@ -392,6 +392,18 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_y_axis.pack(fill="x", pady=(0, 10))
         
+        # Metric section
+        metric_label = ttk.Label(self.second_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
+        metric_label.pack(anchor="w", pady=(5, 2))
+        
+        self.ms_metric = PopoverMultiSelect(
+            self.second_frame,
+            header="Select Metric",
+            items=["Average", "Median", "Maximum", "Minimum", "Sum", "Count"],
+            width=35
+        )
+        self.ms_metric.pack(fill="x", pady=(0, 10))
+        
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
     def build_third_frame(self):
