@@ -396,19 +396,31 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         metric_label = ttk.Label(self.second_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
         metric_label.pack(anchor="w", pady=(5, 2))
         
-        # Create a horizontal frame for metric selector and number input
+        # Create a horizontal frame for metric selectors and number input
         metric_frame = ttk.Frame(self.second_frame)
         metric_frame.pack(fill="x", pady=(0, 10))
         
-        # Metric selector on the left
+        # Aggregation metric selector on the left (avg, median, etc.)
+        agg_metric_frame = ttk.Frame(metric_frame)
+        agg_metric_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        
+        self.ms_agg_metric = PopoverMultiSelect(
+            agg_metric_frame,
+            header="Select Aggregation",
+            items=["avg_lf", "median_lf", "max_lf", "min_lf", "avg_qerr", "median_qerr", "max_qerr", "min_qerr", "avg_perr", "median_perr", "max_perr", "min_perr"],
+            width=18
+        )
+        self.ms_agg_metric.pack(fill="x")
+        
+        # Highest/Lowest metric selector in the middle
         metric_select_frame = ttk.Frame(metric_frame)
-        metric_select_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        metric_select_frame.pack(side="left", fill="both", expand=True, padx=(5, 5))
         
         self.ms_metric = PopoverMultiSelect(
             metric_select_frame,
             header="Select Metric",
             items=["Highest", "Lowest"],
-            width=25
+            width=18
         )
         self.ms_metric.pack(fill="x")
         
