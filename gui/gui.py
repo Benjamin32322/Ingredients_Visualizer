@@ -454,12 +454,21 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             lambda e: self.third_canvas.configure(scrollregion=self.third_canvas.bbox("all"))
         )
         
-        self.third_canvas.create_window((0, 0), window=self.third_scrollable_frame, anchor="nw")
+        # Create window with padding on the right to space widgets from scrollbar
+        self.third_canvas.create_window((0, 0), window=self.third_scrollable_frame, anchor="nw", width=self.third_canvas.winfo_reqwidth())
         self.third_canvas.configure(yscrollcommand=self.third_scrollbar.set)
         
-        # Pack the scrollbar and canvas
-        self.third_scrollbar.pack(side="right", fill="y")
+        # Pack the scrollbar close to right border and canvas with space for widgets
+        self.third_scrollbar.pack(side="right", fill="y", padx=(0, 1))
         self.third_canvas.pack(side="left", fill="both", expand=True)
+        
+        # Update canvas window width when canvas is resized
+        def _configure_canvas(event):
+            # Set the width of the scrollable frame to match canvas width minus scrollbar width and spacing
+            canvas_width = event.width - 15  # Account for scrollbar width and spacing
+            self.third_canvas.itemconfig(self.third_canvas.find_withtag("all")[0], width=canvas_width)
+        
+        self.third_canvas.bind("<Configure>", _configure_canvas)
         
         # Enable mousewheel scrolling
         def _on_mousewheel(event):
