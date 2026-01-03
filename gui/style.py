@@ -43,7 +43,7 @@ def setup_application_styles(parent_widget):
     
     style.configure("Title.TLabel", 
                    font=("Arial", 12, "bold"), 
-                   foreground="#2c3e50")
+                   foreground="#42a5f5")
     
     style.configure("Footer.TLabel", 
                    background="#34495e", 
