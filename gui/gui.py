@@ -254,20 +254,53 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     def build_first_frame(self):
         """Build the query configuration section with enhanced layout"""
         
+        # Create a canvas and scrollbar for scrolling
+        self.first_canvas = tk.Canvas(self.first_frame, highlightthickness=0)
+        self.first_scrollbar = ttk.Scrollbar(self.first_frame, orient="vertical", command=self.first_canvas.yview)
+        self.first_scrollable_frame = ttk.Frame(self.first_canvas)
+        
+        # Configure the canvas
+        self.first_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.first_canvas.configure(scrollregion=self.first_canvas.bbox("all"))
+        )
+        
+        # Create window with padding on the right to space widgets from scrollbar
+        self.first_canvas.create_window((0, 0), window=self.first_scrollable_frame, anchor="nw", width=self.first_canvas.winfo_reqwidth())
+        self.first_canvas.configure(yscrollcommand=self.first_scrollbar.set)
+        
+        # Pack the scrollbar close to right border and canvas with space for widgets
+        self.first_scrollbar.pack(side="right", fill="y", padx=(0, 1))
+        self.first_canvas.pack(side="left", fill="both", expand=True)
+        
+        # Update canvas window width when canvas is resized
+        def _configure_canvas(event):
+            # Set the width of the scrollable frame to match canvas width minus scrollbar width and spacing
+            canvas_width = event.width - 15  # Account for scrollbar width and spacing
+            self.first_canvas.itemconfig(self.first_canvas.find_withtag("all")[0], width=canvas_width)
+        
+        self.first_canvas.bind("<Configure>", _configure_canvas)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel(event):
+            self.first_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        self.first_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
         # Section description
         description_label = ttk.Label(
-            self.first_frame, 
+            self.first_scrollable_frame, 
             text="Configure your database query parameters:",
             style="Title.TLabel"
         )
         description_label.pack(anchor="w", pady=(0, 15))
 
         # Plan Generator section
-        pg_label = ttk.Label(self.first_frame, text="🎯 Plan Generator:", font=("Arial", 10, "bold"))
+        pg_label = ttk.Label(self.first_scrollable_frame, text="🎯 Plan Generator:", font=("Arial", 10, "bold"))
         pg_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_plan_generator = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="Select Plan Generator",
             items=get_values_for_dropdown("plan_generator", "pg_name"),
             width=35
@@ -275,11 +308,11 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_plan_generator.pack(fill="x", pady=(0, 10))
 
         # Cardinality Provider section
-        cp_label = ttk.Label(self.first_frame, text="📊 Cardinality Provider:", font=("Arial", 10, "bold"))
+        cp_label = ttk.Label(self.first_scrollable_frame, text="📊 Cardinality Provider:", font=("Arial", 10, "bold"))
         cp_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_cardinality_provider = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="Select Cardinality Provider",
             items=get_values_for_dropdown("card_provider", "cp_name"),
             width=35
@@ -287,11 +320,11 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_cardinality_provider.pack(fill="x", pady=(0, 10))
 
         # Build Plan Class section
-        bpc_label = ttk.Label(self.first_frame, text="🏗️ Build Plan Class:", font=("Arial", 10, "bold"))
+        bpc_label = ttk.Label(self.first_scrollable_frame, text="🏗️ Build Plan Class:", font=("Arial", 10, "bold"))
         bpc_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_build_plan_class = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="Select Build Plan Class",
             items=get_values_for_dropdown("build_plan_class", "bpc_name"),
             width=35
@@ -299,39 +332,39 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_build_plan_class.pack(fill="x", pady=(0, 10))
 
         # Cost Function section
-        cf_label = ttk.Label(self.first_frame, text="💰 Cost Function Parameters:", font=("Arial", 10, "bold"))
+        cf_label = ttk.Label(self.first_scrollable_frame, text="💰 Cost Function Parameters:", font=("Arial", 10, "bold"))
         cf_label.pack(anchor="w", pady=(5, 2))
 
         self.ms_cf_mat = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="bpi_cf_mat",
             items=get_values_for_dropdown("build_plan_instance", "bpi_cf_mat"),
             width=35
         )
         
         self.ms_cf_concat = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="bpi_cf_concat",
             items=get_values_for_dropdown("build_plan_instance", "bpi_cf_concat"),
             width=35
         )
         
         self.ms_cf_join_bundle = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="bpi_cf_join_bundle",
             items=get_values_for_dropdown("build_plan_instance", "bpi_cf_join_bundle"),
             width=35
         )
         
         self.ms_cf_host_id = PopoverMultiSelect(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="wp_cf_host_id",
             items=get_values_for_dropdown("work_package", "wp_cf_host_id"),
             width=35
         )
 
         self.msplus_cost_function = MultiSelectPlus(
-            self.first_frame,
+            self.first_scrollable_frame,
             header="Advanced Cost Function Configuration",
             items=[
                 self.ms_cf_mat,
@@ -348,20 +381,53 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     def build_second_frame(self):
         """Build the plotting section with plot type selection and axis configuration"""
         
+        # Create a canvas and scrollbar for scrolling
+        self.second_canvas = tk.Canvas(self.second_frame, highlightthickness=0)
+        self.second_scrollbar = ttk.Scrollbar(self.second_frame, orient="vertical", command=self.second_canvas.yview)
+        self.second_scrollable_frame = ttk.Frame(self.second_canvas)
+        
+        # Configure the canvas
+        self.second_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.second_canvas.configure(scrollregion=self.second_canvas.bbox("all"))
+        )
+        
+        # Create window with padding on the right to space widgets from scrollbar
+        self.second_canvas.create_window((0, 0), window=self.second_scrollable_frame, anchor="nw", width=self.second_canvas.winfo_reqwidth())
+        self.second_canvas.configure(yscrollcommand=self.second_scrollbar.set)
+        
+        # Pack the scrollbar close to right border and canvas with space for widgets
+        self.second_scrollbar.pack(side="right", fill="y", padx=(0, 1))
+        self.second_canvas.pack(side="left", fill="both", expand=True)
+        
+        # Update canvas window width when canvas is resized
+        def _configure_canvas(event):
+            # Set the width of the scrollable frame to match canvas width minus scrollbar width and spacing
+            canvas_width = event.width - 15  # Account for scrollbar width and spacing
+            self.second_canvas.itemconfig(self.second_canvas.find_withtag("all")[0], width=canvas_width)
+        
+        self.second_canvas.bind("<Configure>", _configure_canvas)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel(event):
+            self.second_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        self.second_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
         # Section description
         description_label = ttk.Label(
-            self.second_frame, 
+            self.second_scrollable_frame, 
             text="Configure your plot visualization:",
             style="Title.TLabel"
         )
         description_label.pack(anchor="w", pady=(0, 15))
         
         # Plot Type section
-        plot_type_label = ttk.Label(self.second_frame, text="📊 Plot Type:", font=("Arial", 10, "bold"))
+        plot_type_label = ttk.Label(self.second_scrollable_frame, text="📊 Plot Type:", font=("Arial", 10, "bold"))
         plot_type_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_plot_type = PopoverMultiSelect(
-            self.second_frame,
+            self.second_scrollable_frame,
             header="Select Plot Type",
             items=["Bar Chart", "Box Plot", "Graph", "Scatter Plot"],
             width=35
@@ -369,11 +435,11 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_plot_type.pack(fill="x", pady=(0, 10))
         
         # X-Axis section
-        x_axis_label = ttk.Label(self.second_frame, text="📐 X-Axis:", font=("Arial", 10, "bold"))
+        x_axis_label = ttk.Label(self.second_scrollable_frame, text="📐 X-Axis:", font=("Arial", 10, "bold"))
         x_axis_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_x_axis = PopoverMultiSelect(
-            self.second_frame,
+            self.second_scrollable_frame,
             header="Select X-Axis",
             items=["Configuration Parameters"],
             width=35
@@ -381,11 +447,11 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_x_axis.pack(fill="x", pady=(0, 10))
         
         # Y-Axis section
-        y_axis_label = ttk.Label(self.second_frame, text="📏 Y-Axis:", font=("Arial", 10, "bold"))
+        y_axis_label = ttk.Label(self.second_scrollable_frame, text="📏 Y-Axis:", font=("Arial", 10, "bold"))
         y_axis_label.pack(anchor="w", pady=(5, 2))
         
         self.ms_y_axis = PopoverMultiSelect(
-            self.second_frame,
+            self.second_scrollable_frame,
             header="Select Y-Axis",
             items=["Loss Factor", "Q-Error", "P-Error"],
             width=35
@@ -393,11 +459,11 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_y_axis.pack(fill="x", pady=(0, 10))
         
         # Metric section
-        metric_label = ttk.Label(self.second_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
+        metric_label = ttk.Label(self.second_scrollable_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
         metric_label.pack(anchor="w", pady=(5, 2))
         
         # Create a horizontal frame for metric selectors and number input
-        metric_frame = ttk.Frame(self.second_frame)
+        metric_frame = ttk.Frame(self.second_scrollable_frame)
         metric_frame.pack(fill="x", pady=(0, 10))
         
         # Aggregation metric selector on the left (avg, median, etc.)
@@ -721,9 +787,43 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
     def build_results_info_section(self):
         """Build the results information section"""
+        
+        # Create a canvas and scrollbar for scrolling
+        self.results_canvas = tk.Canvas(self.results_frame, highlightthickness=0)
+        self.results_scrollbar_outer = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_canvas.yview)
+        self.results_scrollable_frame = ttk.Frame(self.results_canvas)
+        
+        # Configure the canvas
+        self.results_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.results_canvas.configure(scrollregion=self.results_canvas.bbox("all"))
+        )
+        
+        # Create window with padding on the right to space widgets from scrollbar
+        self.results_canvas.create_window((0, 0), window=self.results_scrollable_frame, anchor="nw", width=self.results_canvas.winfo_reqwidth())
+        self.results_canvas.configure(yscrollcommand=self.results_scrollbar_outer.set)
+        
+        # Pack the scrollbar close to right border and canvas with space for widgets
+        self.results_scrollbar_outer.pack(side="right", fill="y", padx=(0, 1))
+        self.results_canvas.pack(side="left", fill="both", expand=True)
+        
+        # Update canvas window width when canvas is resized
+        def _configure_canvas(event):
+            # Set the width of the scrollable frame to match canvas width minus scrollbar width and spacing
+            canvas_width = event.width - 15  # Account for scrollbar width and spacing
+            self.results_canvas.itemconfig(self.results_canvas.find_withtag("all")[0], width=canvas_width)
+        
+        self.results_canvas.bind("<Configure>", _configure_canvas)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel(event):
+            self.results_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        self.results_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
         # Section description
         description_label = ttk.Label(
-            self.results_frame, 
+            self.results_scrollable_frame, 
             text="Query results and statistics:",
             style="Title.TLabel"
         )
@@ -731,7 +831,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         # Results summary
         self.results_text = tk.Text(
-            self.results_frame, 
+            self.results_scrollable_frame, 
             height=10, 
             wrap="word",
             font=("Courier", 10),
@@ -739,14 +839,14 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.results_text.pack(fill="both", expand=True, pady=(0, 10))
         
-        # Scrollbar for results
-        scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_text.yview)
+        # Scrollbar for results text widget
+        scrollbar = ttk.Scrollbar(self.results_scrollable_frame, orient="vertical", command=self.results_text.yview)
         scrollbar.pack(side="right", fill="y")
         self.results_text.config(yscrollcommand=scrollbar.set)
         
         # Clear results button
         self.clear_results_button = ttk.Button(
-            self.results_frame,
+            self.results_scrollable_frame,
             text="🗑️ Clear Results",
             command=self.clear_results
         )
