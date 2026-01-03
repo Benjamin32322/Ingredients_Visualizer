@@ -144,10 +144,11 @@ class QueryHandlersMixin:
             plot_number_str = self.plot_number_var.get().strip()
             plot_number = int(plot_number_str) if plot_number_str and plot_number_str.isdigit() else 5
             
-            self.create_plot(columns, result, params_summary, plot_type, x_axis, y_axis, metric, plot_number)
+            # Display plot in results frame
+            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, metric, plot_number)
         else:
-            # No plot type selected, show treeview (table)
-            plot_treeview(columns, result, params_summary)
+            # No plot type selected, show treeview (table) in results frame
+            self.display_treeview_in_frame(columns, result, params_summary)
         
         # Update status and restore focus
         self.update_status(f"{analysis_type} query executed - {len(result)} results found")
@@ -285,3 +286,223 @@ class QueryHandlersMixin:
         
         # Call the plotting function
         create_plot_window(columns, data, params_summary, plot_type, x_axis, y_axis, metric, plot_number)
+
+    def display_treeview_in_frame(self, columns, data, params_summary):
+        """Display treeview table in the results frame"""
+        import tkinter as tk
+        from tkinter import ttk
+        import pandas as pd
+        from tkinter import filedialog, messagebox
+        
+        print(f"DEBUG: display_treeview_in_frame called with {len(data)} rows")
+        
+        # Store current results for fullscreen
+        self.current_results_data = {
+            'type': 'treeview',
+            'columns': columns,
+            'data': data,
+            'params_summary': params_summary
+        }
+        
+        # Clear the results container
+        for widget in self.results_container.winfo_children():
+            widget.destroy()
+        
+        print("DEBUG: Results container cleared")
+        print(f"DEBUG: Container geometry: {self.results_container.winfo_width()}x{self.results_container.winfo_height()}")
+        print(f"DEBUG: Container is visible: {self.results_container.winfo_ismapped()}")
+        
+        # Create toolbar with export button
+        toolbar = ttk.Frame(self.results_container)
+        toolbar.pack(side="top", fill="x", pady=(0, 5))
+        
+        export_button = ttk.Button(toolbar, text="📊 Export to Excel", command=lambda: self._export_to_excel(columns, data, params_summary))
+        export_button.pack(side="left", padx=5)
+        
+        print("DEBUG: Toolbar created")
+        
+        # Create treeview with scrollbars
+        tree_frame = ttk.Frame(self.results_container)
+        tree_frame.pack(fill="both", expand=True)
+        
+        # Scrollbars
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical")
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal")
+        
+        # Treeview
+        tree = ttk.Treeview(tree_frame, columns=columns, show="headings", 
+                           yscrollcommand=vsb.set, xscrollcommand=hsb.set, height=15)
+        
+        vsb.config(command=tree.yview)
+        hsb.config(command=tree.xview)
+        
+        # Pack scrollbars and treeview
+        vsb.pack(side="right", fill="y")
+        hsb.pack(side="bottom", fill="x")
+        tree.pack(fill="both", expand=True)
+        
+        print("DEBUG: Treeview created and packed")
+        
+        # Configure columns
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100, anchor="center")
+        
+        # Insert data
+        for row in data:
+            tree.insert("", "end", values=row)
+        
+        print(f"DEBUG: Inserted {len(data)} rows into treeview")
+        
+        # Force update to ensure widgets are rendered
+        tree_frame.update_idletasks()
+        self.results_container.update_idletasks()
+        self.results_container.update()
+        print(f"DEBUG: Tree frame size: {tree_frame.winfo_width()}x{tree_frame.winfo_height()}")
+        print(f"DEBUG: Treeview size: {tree.winfo_width()}x{tree.winfo_height()}")
+        print("DEBUG: display_treeview_in_frame completed")
+    
+    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, metric=None, plot_number=5):
+        """Display plot in the results frame"""
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        from plotting.plotting import get_plot_config, create_bar_chart, create_box_plot, create_scatter_plot, create_line_graph
+        import pandas as pd
+        import tkinter as tk
+        from tkinter import ttk
+        
+        print(f"DEBUG: display_plot_in_frame called - plot_type: {plot_type}")
+        
+        # Store current results for fullscreen
+        self.current_results_data = {
+            'type': 'plot',
+            'columns': columns,
+            'data': data,
+            'params_summary': params_summary,
+            'plot_type': plot_type,
+            'x_axis': x_axis,
+            'y_axis': y_axis,
+            'metric': metric,
+            'plot_number': plot_number
+        }
+        
+        # Clear the results container
+        for widget in self.results_container.winfo_children():
+            widget.destroy()
+        
+        print("DEBUG: Results container cleared for plot")
+        
+        # Create DataFrame
+        df = pd.DataFrame(data, columns=columns)
+        
+        # Get plot configuration and color palette
+        from plotting.style_plot import get_color_palette
+        plot_config = get_plot_config(y_axis, metric, plot_number)
+        colors = get_color_palette()
+        
+        # Create figure with smaller size for embedding
+        fig, ax = plt.subplots(figsize=(8, 5))
+        
+        print(f"DEBUG: Creating {plot_type}")
+        
+        # Check if we have a valid configuration
+        if plot_config and plot_config['column'] in df.columns:
+            column = plot_config['column']
+            top_n = plot_config['top_n']
+            sort_ascending = plot_config['sort_ascending']
+            
+            # Get top N values
+            df_sorted = df.nlargest(top_n, column) if not sort_ascending else df.nsmallest(top_n, column)
+            
+            # Determine title based on metric selection
+            metric_text = metric if metric else "Highest"
+            title = f"{metric_text} {top_n} {plot_config['label']}"
+            
+            # Create the appropriate plot type
+            if plot_type == "Bar Chart":
+                create_bar_chart(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            elif plot_type == "Box Plot":
+                create_box_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            elif plot_type == "Scatter Plot":
+                create_scatter_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            elif plot_type == "Graph":
+                create_line_graph(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+        else:
+            # No configuration found - show placeholder
+            message = f"No plot configuration for Y-Axis: '{y_axis}'"
+            ax.text(0.5, 0.5, message, ha='center', va='center', fontsize=12, transform=ax.transAxes)
+            ax.set_title(f"{plot_type} - No Configuration")
+        
+        print("DEBUG: Plot created, embedding in tkinter")
+        
+        # Create a frame with scrollbars for the plot
+        plot_frame = ttk.Frame(self.results_container)
+        plot_frame.pack(fill="both", expand=True)
+        
+        # Create scrollbars
+        v_scrollbar = ttk.Scrollbar(plot_frame, orient="vertical")
+        h_scrollbar = ttk.Scrollbar(plot_frame, orient="horizontal")
+        
+        # Create canvas for scrolling
+        scroll_canvas = tk.Canvas(plot_frame, yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        v_scrollbar.config(command=scroll_canvas.yview)
+        h_scrollbar.config(command=scroll_canvas.xview)
+        
+        # Pack scrollbars and canvas
+        v_scrollbar.pack(side="right", fill="y")
+        h_scrollbar.pack(side="bottom", fill="x")
+        scroll_canvas.pack(side="left", fill="both", expand=True)
+        
+        # Embed the matplotlib plot in the scrollable canvas
+        canvas = FigureCanvasTkAgg(fig, master=scroll_canvas)
+        canvas.draw()
+        plot_widget = canvas.get_tk_widget()
+        
+        # Add the plot widget to the scrollable canvas
+        scroll_canvas.create_window((0, 0), window=plot_widget, anchor="nw")
+        
+        # Update scroll region after widget is rendered
+        plot_widget.update_idletasks()
+        scroll_canvas.config(scrollregion=scroll_canvas.bbox("all"))
+        
+        print("DEBUG: Plot with scrollbars embedded")
+        
+        # Force update to ensure widgets are rendered
+        plot_frame.update_idletasks()
+        self.results_container.update_idletasks()
+        self.results_container.update()
+        
+        plt.close(fig)  # Close the figure to free memory
+        print("DEBUG: display_plot_in_frame completed")
+    
+    def _export_to_excel(self, columns, data, params_summary):
+        """Export treeview data to Excel"""
+        import pandas as pd
+        from tkinter import filedialog, messagebox
+        
+        try:
+            df = pd.DataFrame(data, columns=columns)
+            
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel-Datei", "*.xlsx"), ("Alle Dateien", "*.*")]
+            )
+            if not filepath:
+                return
+            
+            with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+                if params_summary:
+                    params_rows = [
+                        ['Query Parameters:', params_summary],
+                        ['', '']
+                    ]
+                    params_df = pd.DataFrame(params_rows)
+                    params_df.to_excel(writer, sheet_name='Data', index=False, header=False)
+                    df.to_excel(writer, sheet_name='Data', index=False, startrow=len(params_rows))
+                else:
+                    df.to_excel(writer, sheet_name='Data', index=False)
+            
+            messagebox.showinfo("Export erfolgreich", f"Datei gespeichert:\n{filepath}")
+        except Exception as e:
+            messagebox.showerror("Export fehlgeschlagen", f"Fehler beim Exportieren:\n{str(e)}")
+

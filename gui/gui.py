@@ -120,20 +120,21 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.header_frame = ttk.Frame(self.main_container, style="Header.TFrame")
         self.header_frame.pack(fill="x", pady=(0, 10))
         
-        # Main content area with grid layout
+        # Footer section - pack before content so it gets space
+        self.footer_frame = ttk.Frame(self.main_container, style="Footer.TFrame")
+        self.footer_frame.pack(fill="x", side="bottom")
+        
+        # Main content area with grid layout - pack after footer
         self.content_frame = ttk.Frame(self.main_container)
         self.content_frame.pack(fill="both", expand=True, pady=(0, 10))
         
         # Configure grid weights for responsive layout
-        self.content_frame.grid_columnconfigure(0, weight=1)
-        self.content_frame.grid_columnconfigure(1, weight=1)
-        self.content_frame.grid_rowconfigure(0, weight=1)
-        self.content_frame.grid_rowconfigure(1, weight=1)
+        # Use uniform groups to ensure columns and rows maintain equal proportions
+        self.content_frame.grid_columnconfigure(0, weight=1, uniform="cols")
+        self.content_frame.grid_columnconfigure(1, weight=1, uniform="cols")
+        self.content_frame.grid_rowconfigure(0, weight=1, uniform="rows")
+        self.content_frame.grid_rowconfigure(1, weight=1, uniform="rows")
         self.content_frame.grid_rowconfigure(2, weight=0)  # Execute button row - no expansion
-        
-        # Footer section
-        self.footer_frame = ttk.Frame(self.main_container, style="Footer.TFrame")
-        self.footer_frame.pack(fill="x")
 
     def build_header(self):
         """Build the application header"""
@@ -796,24 +797,27 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         description_label.pack(anchor="w", pady=(0, 15))
         
-        # Results summary
-        self.results_text = tk.Text(
-            self.results_frame, 
-            height=10, 
-            wrap="word",
-            font=("Courier", 10),
-            state="disabled"
-        )
-        self.results_text.pack(fill="both", expand=True, pady=(0, 10))
-        
-        # Clear results button
-        self.clear_results_button = ttk.Button(
+        # Open in fullscreen button - pack FIRST with side=bottom to reserve space
+        self.fullscreen_button = ttk.Button(
             self.results_frame,
-            text="🗑️ Clear Results",
-            command=self.clear_results
+            text="�️ Open in Fullscreen",
+            command=self.open_results_fullscreen
         )
-        self.clear_results_button.pack(fill="x")
-
+        self.fullscreen_button.pack(fill="x", side="bottom")
+        
+        # Container frame for results (will hold either treeview or plot)
+        self.results_container = ttk.Frame(self.results_frame, style="Card.TFrame")
+        self.results_container.pack(fill="both", expand=True, pady=(0, 10))
+        
+        # Initialize with empty message
+        self.empty_results_label = ttk.Label(
+            self.results_container,
+            text="No results yet. Execute a query to see results here.",
+            font=("Arial", 10, "italic"),
+            foreground="#7f8c8d"
+        )
+        self.empty_results_label.pack(expand=True)
+        
     def on_detail_input_change(self, *args):
         """Normalize and validate number input - replace commas with dots and allow only valid number characters"""
         # Prevent recursive calls
@@ -916,12 +920,34 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                     # Update the available items in the metric selector
                     metric_select.set_items(metrics)
 
-    def clear_results(self):
-        """Clear the results display"""
-        self.results_text.config(state="normal")
-        self.results_text.delete(1.0, tk.END)
-        self.results_text.config(state="disabled")
-        self.update_status("Results cleared")
+    def open_results_fullscreen(self):
+        """Open current results in fullscreen window"""
+        if hasattr(self, 'current_results_data') and self.current_results_data:
+            result_type = self.current_results_data.get('type')
+            
+            if result_type == 'treeview':
+                # Open treeview in fullscreen
+                from plotting.treeview import plot_treeview
+                plot_treeview(
+                    self.current_results_data['columns'],
+                    self.current_results_data['data'],
+                    self.current_results_data['params_summary']
+                )
+            elif result_type == 'plot':
+                # Open plot in fullscreen
+                from plotting.plotting import create_plot_window
+                create_plot_window(
+                    self.current_results_data['columns'],
+                    self.current_results_data['data'],
+                    self.current_results_data['params_summary'],
+                    self.current_results_data['plot_type'],
+                    self.current_results_data.get('x_axis'),
+                    self.current_results_data.get('y_axis'),
+                    self.current_results_data.get('metric'),
+                    self.current_results_data.get('plot_number', 5)
+                )
+        else:
+            self.update_status("No results available. Execute a query first.")
 
     def update_status(self, message):
         """Update the status message in the footer"""
