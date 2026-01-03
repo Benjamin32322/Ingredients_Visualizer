@@ -424,17 +424,14 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_metric.pack(fill="x")
         
-        # Number input on the right
+        # Number input on the right - aligned vertically with popovers
         number_input_frame = ttk.Frame(metric_frame)
-        number_input_frame.pack(side="left", fill="both", padx=(5, 0))
-        
-        number_label = ttk.Label(number_input_frame, text="Number:", font=("Arial", 9))
-        number_label.pack(anchor="w")
+        number_input_frame.pack(side="left", fill="y", padx=(5, 0))
         
         self.plot_number_var = tk.StringVar(value="5")
         self.plot_number_var.trace_add("write", lambda *args: self.validate_plot_number_input())
         self.plot_number_entry = ttk.Entry(number_input_frame, textvariable=self.plot_number_var, width=10)
-        self.plot_number_entry.pack(fill="x")
+        self.plot_number_entry.pack(fill="both", expand=True)
         
         # Bind events to ensure Entry remains responsive
         self.plot_number_entry.bind("<Button-1>", self.on_entry_click)
