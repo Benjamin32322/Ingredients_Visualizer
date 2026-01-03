@@ -503,10 +503,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_query_selection.pack(fill="x", pady=(0, 10))
         
-        # Separator for visual distinction
-        separator = ttk.Separator(self.third_scrollable_frame, orient="horizontal")
-        separator.pack(fill="x", pady=(10, 15))
-        
         # Filter configuration label
         filter_label = ttk.Label(
             self.third_scrollable_frame, 
