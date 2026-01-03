@@ -788,42 +788,9 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     def build_results_info_section(self):
         """Build the results information section"""
         
-        # Create a canvas and scrollbar for scrolling
-        self.results_canvas = tk.Canvas(self.results_frame, highlightthickness=0)
-        self.results_scrollbar_outer = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_canvas.yview)
-        self.results_scrollable_frame = ttk.Frame(self.results_canvas)
-        
-        # Configure the canvas
-        self.results_scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.results_canvas.configure(scrollregion=self.results_canvas.bbox("all"))
-        )
-        
-        # Create window with padding on the right to space widgets from scrollbar
-        self.results_canvas.create_window((0, 0), window=self.results_scrollable_frame, anchor="nw", width=self.results_canvas.winfo_reqwidth())
-        self.results_canvas.configure(yscrollcommand=self.results_scrollbar_outer.set)
-        
-        # Pack the scrollbar close to right border and canvas with space for widgets
-        self.results_scrollbar_outer.pack(side="right", fill="y", padx=(0, 1))
-        self.results_canvas.pack(side="left", fill="both", expand=True)
-        
-        # Update canvas window width when canvas is resized
-        def _configure_canvas(event):
-            # Set the width of the scrollable frame to match canvas width minus scrollbar width and spacing
-            canvas_width = event.width - 15  # Account for scrollbar width and spacing
-            self.results_canvas.itemconfig(self.results_canvas.find_withtag("all")[0], width=canvas_width)
-        
-        self.results_canvas.bind("<Configure>", _configure_canvas)
-        
-        # Enable mousewheel scrolling
-        def _on_mousewheel(event):
-            self.results_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        self.results_canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        
         # Section description
         description_label = ttk.Label(
-            self.results_scrollable_frame, 
+            self.results_frame, 
             text="Query results and statistics:",
             style="Title.TLabel"
         )
@@ -831,7 +798,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         # Results summary
         self.results_text = tk.Text(
-            self.results_scrollable_frame, 
+            self.results_frame, 
             height=10, 
             wrap="word",
             font=("Courier", 10),
@@ -839,14 +806,9 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.results_text.pack(fill="both", expand=True, pady=(0, 10))
         
-        # Scrollbar for results text widget
-        scrollbar = ttk.Scrollbar(self.results_scrollable_frame, orient="vertical", command=self.results_text.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.results_text.config(yscrollcommand=scrollbar.set)
-        
         # Clear results button
         self.clear_results_button = ttk.Button(
-            self.results_scrollable_frame,
+            self.results_frame,
             text="🗑️ Clear Results",
             command=self.clear_results
         )
