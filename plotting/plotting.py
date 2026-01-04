@@ -71,14 +71,36 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
     Args:
         ax: Matplotlib axes object
         df: DataFrame with data
-        x_col: Column name for x-axis (or index if None)
+        x_col: Column name for x-axis (or "Configuration Parameters" for special handling)
         y_col: Column name for y-axis values
         title: Chart title
         y_label: Y-axis label
         colors: List of colors to use
     """
-    # Determine x-axis values and labels
-    if x_col and x_col in df.columns:
+    # Check if we should display configuration parameters
+    if x_col == "Configuration Parameters":
+        # Configuration parameter columns to display
+        config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
+                      'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        
+        # Create multi-line labels for each data point
+        x_labels = []
+        for idx, row in df.iterrows():
+            label_parts = []
+            for col in config_cols:
+                if col in df.columns:
+                    value = row[col]
+                    # Format the label nicely
+                    col_display = col.replace('pg_name', 'Plan Gen').replace('cp_name', 'Card Prov') \
+                                    .replace('bpc_name', 'Build Plan').replace('bpi_cf_join_bundle', 'Join Bundle') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
+                                    .replace('wp_cf_host_id', 'Host ID')
+                    label_parts.append(f"{col_display}: {value}")
+            x_labels.append('\n'.join(label_parts))
+        
+        x_positions = range(len(df))
+        x_axis_label = "Configuration Parameters"
+    elif x_col and x_col in df.columns:
         # Use the specified column for x-axis
         x_labels = df[x_col].astype(str).tolist()
         x_positions = range(len(df))
@@ -96,7 +118,11 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
     
     # Set x-axis labels
     ax.set_xticks(x_positions)
-    ax.set_xticklabels(x_labels, rotation=45, ha='right')
+    if x_col == "Configuration Parameters":
+        # For config params, use smaller font and vertical alignment
+        ax.set_xticklabels(x_labels, rotation=0, ha='center', fontsize=7, multialignment='left')
+    else:
+        ax.set_xticklabels(x_labels, rotation=45, ha='right')
     
     # Styling
     ax.set_xlabel(x_axis_label, fontsize=12, fontweight='bold')
@@ -122,13 +148,45 @@ def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
     Args:
         ax: Matplotlib axes object
         df: DataFrame with data
-        x_col: Column name for x-axis grouping (or None for single box)
+        x_col: Column name for x-axis grouping (or "Configuration Parameters" for special handling)
         y_col: Column name for y-axis values
         title: Chart title
         y_label: Y-axis label
         colors: List of colors to use
     """
-    if x_col and x_col in df.columns:
+    if x_col == "Configuration Parameters":
+        # For config params, create one box per row with config labels
+        config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
+                      'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        
+        # Create labels for each configuration
+        x_labels = []
+        data_points = []
+        for idx, row in df.iterrows():
+            label_parts = []
+            for col in config_cols:
+                if col in df.columns:
+                    value = row[col]
+                    col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
+                                    .replace('bpc_name', 'BPC').replace('bpi_cf_join_bundle', 'JB') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Con') \
+                                    .replace('wp_cf_host_id', 'Host')
+                    label_parts.append(f"{col_display}:{value}")
+            x_labels.append('\n'.join(label_parts))
+            data_points.append([row[y_col]])  # Single value as list for boxplot
+        
+        bp = ax.boxplot(data_points, labels=x_labels, patch_artist=True)
+        
+        # Color each box
+        for patch, color in zip(bp['boxes'], colors[:len(data_points)]):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+        
+        # Adjust label size for config params
+        ax.tick_params(axis='x', labelsize=7)
+        ax.set_xlabel("Configuration Parameters", fontsize=12, fontweight='bold')
+        
+    elif x_col and x_col in df.columns:
         # Group by x_col and create box plot for each group
         groups = df.groupby(x_col)[y_col].apply(list)
         bp = ax.boxplot(groups.values, labels=groups.index.astype(str), patch_artist=True)
@@ -137,14 +195,16 @@ def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
         for patch, color in zip(bp['boxes'], colors[:len(groups)]):
             patch.set_facecolor(color)
             patch.set_alpha(0.7)
+        
+        ax.set_xlabel(x_col, fontsize=12, fontweight='bold')
     else:
         # Single box plot for all data
         bp = ax.boxplot([df[y_col].tolist()], labels=['All Data'], patch_artist=True)
         bp['boxes'][0].set_facecolor(colors[0])
         bp['boxes'][0].set_alpha(0.7)
+        ax.set_xlabel("", fontsize=12, fontweight='bold')
     
     # Styling
-    ax.set_xlabel(x_col if x_col else "", fontsize=12, fontweight='bold')
     ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
     
@@ -160,13 +220,37 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
     Args:
         ax: Matplotlib axes object
         df: DataFrame with data
-        x_col: Column name for x-axis (or index if None)
+        x_col: Column name for x-axis (or "Configuration Parameters" for special handling)
         y_col: Column name for y-axis values
         title: Chart title
         y_label: Y-axis label
         colors: List of colors to use
     """
-    if x_col and x_col in df.columns:
+    if x_col == "Configuration Parameters":
+        # Use index for x-values and add configuration labels
+        x_values = range(len(df))
+        x_axis_label = "Configuration Parameters"
+        
+        # Create multi-line labels
+        config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
+                      'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        x_labels = []
+        for idx, row in df.iterrows():
+            label_parts = []
+            for col in config_cols:
+                if col in df.columns:
+                    value = row[col]
+                    col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
+                                    .replace('bpc_name', 'BPC').replace('bpi_cf_join_bundle', 'JB') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Con') \
+                                    .replace('wp_cf_host_id', 'Host')
+                    label_parts.append(f"{col_display}:{value}")
+            x_labels.append('\n'.join(label_parts))
+        
+        ax.set_xticks(x_values)
+        ax.set_xticklabels(x_labels, rotation=0, ha='center', fontsize=7)
+        
+    elif x_col and x_col in df.columns:
         x_values = df[x_col]
         x_axis_label = x_col
     else:
@@ -181,7 +265,8 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
                         s=100, alpha=0.7, edgecolors='black', linewidth=1.5)
     
     # Styling
-    ax.set_xlabel(x_axis_label, fontsize=12, fontweight='bold')
+    ax.set_xlabel(x_axis_label if x_col != "Configuration Parameters" else x_axis_label, 
+                  fontsize=12, fontweight='bold')
     ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
     
@@ -197,13 +282,37 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
     Args:
         ax: Matplotlib axes object
         df: DataFrame with data
-        x_col: Column name for x-axis (or index if None)
+        x_col: Column name for x-axis (or "Configuration Parameters" for special handling)
         y_col: Column name for y-axis values
         title: Chart title
         y_label: Y-axis label
         colors: List of colors to use
     """
-    if x_col and x_col in df.columns:
+    if x_col == "Configuration Parameters":
+        # Use index for x-values and add configuration labels
+        x_values = range(len(df))
+        x_axis_label = "Configuration Parameters"
+        
+        # Create multi-line labels
+        config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
+                      'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        x_labels = []
+        for idx, row in df.iterrows():
+            label_parts = []
+            for col in config_cols:
+                if col in df.columns:
+                    value = row[col]
+                    col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
+                                    .replace('bpc_name', 'BPC').replace('bpi_cf_join_bundle', 'JB') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Con') \
+                                    .replace('wp_cf_host_id', 'Host')
+                    label_parts.append(f"{col_display}:{value}")
+            x_labels.append('\n'.join(label_parts))
+        
+        ax.set_xticks(x_values)
+        ax.set_xticklabels(x_labels, rotation=0, ha='center', fontsize=7)
+        
+    elif x_col and x_col in df.columns:
         x_values = df[x_col]
         x_axis_label = x_col
     else:
