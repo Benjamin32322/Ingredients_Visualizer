@@ -342,7 +342,7 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
     plt.tight_layout()
 
 
-def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None, metric=None, plot_number=5):
+def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5):
     """
     Create a plot visualization window based on the selected plot type
     
@@ -352,13 +352,14 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
         params_summary (str): Parameter summary string for display
         plot_type (str): Type of plot ("Bar Chart", "Box Plot", "Graph", "Scatter Plot")
         x_axis (str): Column name for X-axis (optional)
-        y_axis (str): Column name for Y-axis (optional)
+        y_axis (str): Column name for Y-axis (optional, kept for backward compatibility)
+        agg_metric (str): Aggregation metric column name (e.g., "avg_lf", "max_qerr")
         metric (str): Metric selection ("Highest" or "Lowest", optional)
         plot_number (int): Number of data points to display (default: 5)
     """
     # Create new window
     plot_window = tk.Toplevel()
-    plot_window.title(f"{plot_type} - {y_axis if y_axis else 'Plot'}")
+    plot_window.title(f"{plot_type} - {agg_metric if agg_metric else 'Plot'}")
     plot_window.geometry("1000x800")
     
     # Display parameter summary at the top
@@ -385,31 +386,47 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
     # Create matplotlib figure
     fig, ax = plt.subplots(figsize=(11, 7))
     
-    # Check if we have a configuration for this Y-axis
-    plot_config = get_plot_config(y_axis, metric, plot_number) if y_axis else None
-    
-    if plot_config and plot_config['column'] in df.columns:
-        # We have a valid configuration - create the plot
-        column = plot_config['column']
-        top_n = plot_config['top_n']
-        sort_ascending = plot_config['sort_ascending']
+    # Check if we have a valid aggregation metric
+    if agg_metric and agg_metric in df.columns:
+        # We have a valid metric - create the plot
+        column = agg_metric
+        
+        # Determine sort order based on metric selection
+        sort_ascending = (metric == "Lowest")
         
         # Get top N values
-        df_sorted = df.nlargest(top_n, column) if not sort_ascending else df.nsmallest(top_n, column)
+        df_sorted = df.nlargest(plot_number, column) if not sort_ascending else df.nsmallest(plot_number, column)
+        
+        # Create a readable label from the metric name
+        metric_labels = {
+            "avg_lf": "Average Loss Factor",
+            "median_lf": "Median Loss Factor",
+            "max_lf": "Maximum Loss Factor",
+            "min_lf": "Minimum Loss Factor",
+            "avg_qerr": "Average Q-Error",
+            "median_qerr": "Median Q-Error",
+            "max_qerr": "Maximum Q-Error",
+            "min_qerr": "Minimum Q-Error",
+            "avg_perr": "Average P-Error",
+            "median_perr": "Median P-Error",
+            "max_perr": "Maximum P-Error",
+            "min_perr": "Minimum P-Error"
+        }
+        y_label = metric_labels.get(agg_metric, agg_metric)
         
         # Determine title based on metric selection
         metric_text = metric if metric else "Highest"
-        title = f"{metric_text} {top_n} {plot_config['label']}"
+        title = f"{metric_text} {plot_number} {y_label}"
         
         # Create the appropriate plot type
         if plot_type == "Bar Chart":
-            create_bar_chart(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            create_bar_chart(ax, df_sorted, x_axis, column, title, y_label, colors)
         elif plot_type == "Box Plot":
-            create_box_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            create_box_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
         elif plot_type == "Scatter Plot":
-            create_scatter_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            create_scatter_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
         elif plot_type == "Graph":
-            create_line_graph(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+            create_line_graph(ax, df_sorted, x_axis, column, title, y_label, colors)
         else:
             # Unknown plot type
             ax.text(0.5, 0.5, f"Plot type '{plot_type}' is not supported.\n\nAvailable types:\n- Bar Chart\n- Box Plot\n- Scatter Plot\n- Graph",
@@ -417,15 +434,15 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
             ax.set_title(f"Unsupported Plot Type: {plot_type}")
     
     else:
-        # No configuration found - show placeholder
-        message = f"No plot configuration for Y-Axis: '{y_axis}'\n\n"
-        message += f"Available data columns: {', '.join(df.columns[:5])}...\n"
-        message += f"Data shape: {df.shape}\n\n"
-        message += "Add configuration in get_plot_config() function."
+        # No aggregation metric selected or not found in data
+        message = f"Please select an Aggregation metric" if not agg_metric else f"Metric '{agg_metric}' not found in data\n\n"
+        if agg_metric:
+            message += f"Available data columns: {', '.join(df.columns[:10])}...\n"
+            message += f"Data shape: {df.shape}"
         
         ax.text(0.5, 0.5, message,
                 ha='center', va='center', fontsize=12, transform=ax.transAxes)
-        ax.set_title(f"{plot_type} - No Configuration")
+        ax.set_title(f"{plot_type} - No Metric Selected")
     
     # Embed matplotlib figure in tkinter window
     canvas = FigureCanvasTkAgg(fig, master=plot_window)

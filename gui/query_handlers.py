@@ -141,6 +141,10 @@ class QueryHandlersMixin:
             x_axis = selected_x_axis[0] if selected_x_axis and len(selected_x_axis) > 0 else None
             y_axis = selected_y_axis[0] if selected_y_axis and len(selected_y_axis) > 0 else None
             
+            # Get aggregation metric selection (e.g., avg_lf, max_qerr, etc.)
+            selected_agg_metrics = self.ms_agg_metric.get_selected()
+            agg_metric = selected_agg_metrics[0] if selected_agg_metrics and len(selected_agg_metrics) > 0 else None
+            
             # Get metric selection (Highest/Lowest)
             selected_metrics = self.ms_metric.get_selected()
             metric = selected_metrics[0] if selected_metrics and len(selected_metrics) > 0 else None
@@ -149,8 +153,8 @@ class QueryHandlersMixin:
             plot_number_str = self.plot_number_var.get().strip()
             plot_number = int(plot_number_str) if plot_number_str and plot_number_str.isdigit() else 5
             
-            # Display plot in results frame
-            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, metric, plot_number)
+            # Display plot in results frame with aggregation metric
+            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, agg_metric, metric, plot_number)
         else:
             # No plot type selected, show treeview (table) in results frame
             self.display_treeview_in_frame(columns, result, params_summary)
@@ -358,7 +362,7 @@ class QueryHandlersMixin:
         print(f"DEBUG: Treeview size: {tree.winfo_width()}x{tree.winfo_height()}")
         print("DEBUG: display_treeview_in_frame completed")
     
-    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, metric=None, plot_number=5):
+    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5):
         """Display plot in the results frame"""
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -367,7 +371,7 @@ class QueryHandlersMixin:
         import tkinter as tk
         from tkinter import ttk
         
-        print(f"DEBUG: display_plot_in_frame called - plot_type: {plot_type}")
+        print(f"DEBUG: display_plot_in_frame called - plot_type: {plot_type}, agg_metric: {agg_metric}")
         
         # Store current results for fullscreen
         self.current_results_data = {
@@ -378,6 +382,7 @@ class QueryHandlersMixin:
             'plot_type': plot_type,
             'x_axis': x_axis,
             'y_axis': y_axis,
+            'agg_metric': agg_metric,
             'metric': metric,
             'plot_number': plot_number
         }
@@ -391,9 +396,8 @@ class QueryHandlersMixin:
         # Create DataFrame
         df = pd.DataFrame(data, columns=columns)
         
-        # Get plot configuration and color palette
+        # Get color palette
         from plotting.style_plot import get_color_palette
-        plot_config = get_plot_config(y_axis, metric, plot_number)
         colors = get_color_palette()
         
         # Create figure with smaller size for embedding
@@ -401,33 +405,52 @@ class QueryHandlersMixin:
         
         print(f"DEBUG: Creating {plot_type}")
         
-        # Check if we have a valid configuration
-        if plot_config and plot_config['column'] in df.columns:
-            column = plot_config['column']
-            top_n = plot_config['top_n']
-            sort_ascending = plot_config['sort_ascending']
+        # Check if we have a valid aggregation metric selected
+        if agg_metric and agg_metric in df.columns:
+            column = agg_metric
+            
+            # Determine sort order based on metric selection
+            sort_ascending = (metric == "Lowest")
             
             # Get top N values
-            df_sorted = df.nlargest(top_n, column) if not sort_ascending else df.nsmallest(top_n, column)
+            df_sorted = df.nlargest(plot_number, column) if not sort_ascending else df.nsmallest(plot_number, column)
+            
+            # Create a readable label from the metric name
+            # e.g., "avg_lf" -> "Average Loss Factor", "max_qerr" -> "Maximum Q-Error"
+            metric_labels = {
+                "avg_lf": "Average Loss Factor",
+                "median_lf": "Median Loss Factor",
+                "max_lf": "Maximum Loss Factor",
+                "min_lf": "Minimum Loss Factor",
+                "avg_qerr": "Average Q-Error",
+                "median_qerr": "Median Q-Error",
+                "max_qerr": "Maximum Q-Error",
+                "min_qerr": "Minimum Q-Error",
+                "avg_perr": "Average P-Error",
+                "median_perr": "Median P-Error",
+                "max_perr": "Maximum P-Error",
+                "min_perr": "Minimum P-Error"
+            }
+            y_label = metric_labels.get(agg_metric, agg_metric)
             
             # Determine title based on metric selection
             metric_text = metric if metric else "Highest"
-            title = f"{metric_text} {top_n} {plot_config['label']}"
+            title = f"{metric_text} {plot_number} {y_label}"
             
             # Create the appropriate plot type
             if plot_type == "Bar Chart":
-                create_bar_chart(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+                create_bar_chart(ax, df_sorted, x_axis, column, title, y_label, colors)
             elif plot_type == "Box Plot":
-                create_box_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+                create_box_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
             elif plot_type == "Scatter Plot":
-                create_scatter_plot(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+                create_scatter_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
             elif plot_type == "Graph":
-                create_line_graph(ax, df_sorted, x_axis, column, title, plot_config['label'], colors)
+                create_line_graph(ax, df_sorted, x_axis, column, title, y_label, colors)
         else:
-            # No configuration found - show placeholder
-            message = f"No plot configuration for Y-Axis: '{y_axis}'"
+            # No aggregation metric selected or not found in data - show placeholder
+            message = f"Please select an Aggregation metric" if not agg_metric else f"Metric '{agg_metric}' not found in data"
             ax.text(0.5, 0.5, message, ha='center', va='center', fontsize=12, transform=ax.transAxes)
-            ax.set_title(f"{plot_type} - No Configuration")
+            ax.set_title(f"{plot_type} - No Metric Selected")
         
         print("DEBUG: Plot created, embedding in tkinter")
         

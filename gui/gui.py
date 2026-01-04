@@ -450,7 +450,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_agg_metric = PopoverMultiSelect(
             agg_metric_frame,
             header="Select Aggregation",
-            items=["avg_lf", "median_lf", "max_lf", "min_lf", "avg_qerr", "median_qerr", "max_qerr", "min_qerr", "avg_perr", "median_perr", "max_perr", "min_perr"],
+            items=[],  # Start with empty items, will be populated based on Analysis Parameter
             width=18
         )
         self.ms_agg_metric.pack(fill="x")
@@ -538,6 +538,13 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             width=35
         )
         self.ms_analysis_parameter.pack(fill="x", pady=(0, 10))
+        
+        # Bind to update aggregation items when analysis parameter changes
+        original_close = self.ms_analysis_parameter._close
+        def close_with_update():
+            original_close()
+            self.update_aggregation_items()
+        self.ms_analysis_parameter._close = close_with_update
         
         # Query Selection section (permanently visible)
         query_label = ttk.Label(
@@ -910,11 +917,34 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                     self.current_results_data['plot_type'],
                     self.current_results_data.get('x_axis'),
                     self.current_results_data.get('y_axis'),
+                    self.current_results_data.get('agg_metric'),
                     self.current_results_data.get('metric'),
                     self.current_results_data.get('plot_number', 5)
                 )
         else:
             self.update_status("No results available. Execute a query first.")
+
+    def update_aggregation_items(self):
+        """Update aggregation items based on selected analysis parameter"""
+        selected_analysis = self.ms_analysis_parameter.get_selected()
+        
+        if not selected_analysis or len(selected_analysis) == 0:
+            # No analysis parameter selected - clear aggregation items
+            self.ms_agg_metric.set_items([])
+        else:
+            analysis_type = selected_analysis[0]
+            
+            # Map analysis type to metric suffix
+            if analysis_type == "Loss Factor Analysis":
+                metrics = ["avg_lf", "median_lf", "max_lf", "min_lf"]
+            elif analysis_type == "Q-Error Analysis":
+                metrics = ["avg_qerr", "median_qerr", "max_qerr", "min_qerr"]
+            elif analysis_type == "P-Error Analysis":
+                metrics = ["avg_perr", "median_perr", "max_perr", "min_perr"]
+            else:
+                metrics = []
+            
+            self.ms_agg_metric.set_items(metrics)
 
     def update_status(self, message):
         """Update the status message in the footer"""
