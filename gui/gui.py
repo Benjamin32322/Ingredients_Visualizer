@@ -639,9 +639,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         metric_frame = ttk.Frame(row_frame)
         metric_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
         
-        metric_label = ttk.Label(metric_frame, text="Filter Metric:", font=("Arial", 9))
-        metric_label.pack(anchor="w")
-        
         # All available metrics (not filtered by analysis type)
         all_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
         metric_select = PopoverMultiSelect(
@@ -658,9 +655,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         comparison_frame = ttk.Frame(row_frame)
         comparison_frame.pack(side="left", fill="both", expand=True, padx=5)
         
-        comparison_label = ttk.Label(comparison_frame, text="Comparison:", font=("Arial", 9))
-        comparison_label.pack(anchor="w")
-        
         comparison_select = PopoverMultiSelect(
             comparison_frame,
             header="Select Comparison",
@@ -674,9 +668,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         # Column 3: Filter Value (Entry)
         value_frame = ttk.Frame(row_frame)
         value_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
-        
-        value_label = ttk.Label(value_frame, text="Value:", font=("Arial", 9))
-        value_label.pack(anchor="w")
         
         value_var = tk.StringVar()
         # Add validation callback to restrict to numerical values and convert commas to dots

@@ -91,8 +91,8 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
                 if col in df.columns:
                     value = row[col]
                     # Format the label nicely
-                    col_display = col.replace('pg_name', 'Plan Gen').replace('cp_name', 'Card Prov') \
-                                    .replace('bpc_name', 'Build Plan').replace('bpi_cf_join_bundle', 'Join Bundle') \
+                    col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
+                                    .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
                                     .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
                                     .replace('wp_cf_host_id', 'Host ID')
                     label_parts.append(f"{col_display}: {value}")
@@ -168,10 +168,10 @@ def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
                 if col in df.columns:
                     value = row[col]
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
-                                    .replace('bpc_name', 'BPC').replace('bpi_cf_join_bundle', 'JB') \
-                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Con') \
-                                    .replace('wp_cf_host_id', 'Host')
-                    label_parts.append(f"{col_display}:{value}")
+                                    .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
+                                    .replace('wp_cf_host_id', 'Host ID')
+                    label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
             data_points.append([row[y_col]])  # Single value as list for boxplot
         
@@ -241,10 +241,10 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
                 if col in df.columns:
                     value = row[col]
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
-                                    .replace('bpc_name', 'BPC').replace('bpi_cf_join_bundle', 'JB') \
-                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Con') \
-                                    .replace('wp_cf_host_id', 'Host')
-                    label_parts.append(f"{col_display}:{value}")
+                                    .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
+                                    .replace('wp_cf_host_id', 'Host ID')
+                    label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
         
         ax.set_xticks(x_values)
@@ -303,10 +303,10 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
                 if col in df.columns:
                     value = row[col]
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
-                                    .replace('bpc_name', 'BPC').replace('bpi_cf_join_bundle', 'JB') \
-                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Con') \
-                                    .replace('wp_cf_host_id', 'Host')
-                    label_parts.append(f"{col_display}:{value}")
+                                    .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
+                                    .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
+                                    .replace('wp_cf_host_id', 'Host ID')
+                    label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
         
         ax.set_xticks(x_values)
