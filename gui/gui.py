@@ -169,7 +169,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         """Create the query configuration section (top-left)"""
         self.first_frame = ttk.LabelFrame(
             self.content_frame,
-            text="📊 Query Configuration",
+            text="⚙️ Query Configuration",
             style="Card.TFrame",
             padding=20
         )
@@ -181,7 +181,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         """Create the plotting section (top-right)"""
         self.second_frame = ttk.LabelFrame(
             self.content_frame,
-            text="� Plotting",
+            text="📊 Plotting",
             style="Card.TFrame",
             padding=20
         )
@@ -558,7 +558,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.ms_analysis_parameter = PopoverMultiSelect(
             self.third_scrollable_frame,
             header="Select Analysis Parameter",
-            items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis", "Query Analysis", "Detail Query Analysis"],
+            items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis"],
             width=35
         )
         self.ms_analysis_parameter.pack(fill="x", pady=(0, 10))
@@ -791,7 +791,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         # Open in fullscreen button - pack FIRST with side=bottom to reserve space
         self.fullscreen_button = ttk.Button(
             self.results_frame,
-            text="�️ Open in Fullscreen",
+            text="⛶ Open in Fullscreen",
             command=self.open_results_fullscreen
         )
         self.fullscreen_button.pack(fill="x", side="bottom")

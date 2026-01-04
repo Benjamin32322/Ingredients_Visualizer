@@ -43,22 +43,26 @@ class QueryHandlersMixin:
             print("  -> Using DetailQuery (query_id=5)")
             self.on_execute(query_id=5, analysis_type="Detail Query")
         else:
-            # Otherwise, execute based on selected analysis method
-            selected_methods = self.ms_analysis_parameter.get_selected()
-            print(f"  -> Using selected analysis: {selected_methods}")
+            # Check if a query is selected in Query Selection popover
+            selected_queries = self.ms_query_selection.get_selected()
             
-            if "Loss Factor Analysis" in selected_methods:
-                self.on_execute(query_id=1, analysis_type="Loss Factor")
-            elif "Q-Error Analysis" in selected_methods:
-                self.on_execute(query_id=3, analysis_type="Q-Error")
-            elif "P-Error Analysis" in selected_methods:
-                self.on_execute(query_id=4, analysis_type="P-Error")
-            elif "Detail Analysis" in selected_methods:
-                self.on_execute(query_id=5, analysis_type="Detail Analysis")
-            elif "Query Analysis" in selected_methods:
+            if selected_queries and len(selected_queries) > 0:
+                # If a query is selected, use Query Analysis (query_id=6)
+                print(f"  -> Using Query Analysis (query_id=6) for selected queries: {selected_queries}")
                 self.on_execute(query_id=6, analysis_type="Query Analysis")
             else:
-                self.update_status("Please select an analysis method")
+                # Otherwise, execute based on selected analysis method
+                selected_methods = self.ms_analysis_parameter.get_selected()
+                print(f"  -> Using selected analysis: {selected_methods}")
+                
+                if "Loss Factor Analysis" in selected_methods:
+                    self.on_execute(query_id=1, analysis_type="Loss Factor")
+                elif "Q-Error Analysis" in selected_methods:
+                    self.on_execute(query_id=3, analysis_type="Q-Error")
+                elif "P-Error Analysis" in selected_methods:
+                    self.on_execute(query_id=4, analysis_type="P-Error")
+                else:
+                    self.update_status("Please select an analysis method or a query")
         print("=" * 60)
     
     def on_execute(self, query_id=1, analysis_type="Loss Factor"):
