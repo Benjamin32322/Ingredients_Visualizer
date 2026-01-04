@@ -312,16 +312,7 @@ class QueryHandlersMixin:
         print(f"DEBUG: Container geometry: {self.results_container.winfo_width()}x{self.results_container.winfo_height()}")
         print(f"DEBUG: Container is visible: {self.results_container.winfo_ismapped()}")
         
-        # Create toolbar with export button
-        toolbar = ttk.Frame(self.results_container)
-        toolbar.pack(side="top", fill="x", pady=(0, 5))
-        
-        export_button = ttk.Button(toolbar, text="📊 Export to Excel", command=lambda: self._export_to_excel(columns, data, params_summary))
-        export_button.pack(side="left", padx=5)
-        
-        print("DEBUG: Toolbar created")
-        
-        # Create treeview with scrollbars
+        # Create treeview with scrollbars (no toolbar/export button in embedded view)
         tree_frame = ttk.Frame(self.results_container)
         tree_frame.pack(fill="both", expand=True)
         
