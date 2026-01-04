@@ -79,8 +79,9 @@ class QueryHandlersMixin:
         selected_cf = self.msplus_cost_function.get_selected()
         selected_qg = self.ms_query_selection.get_selected()
         selected_plot_types = self.ms_plot_type.get_selected()
-        selected_x_axis = self.ms_x_axis.get_selected()
-        selected_y_axis = self.ms_y_axis.get_selected()
+        # Hardcoded X-Axis and Y-Axis values
+        selected_x_axis = ["Configuration Parameters"]
+        selected_y_axis = ["Loss Factor"]
 
         pg_filter = build_filter("pg_name", selected_pg)
         cp_filter = build_filter("cp_name", selected_cp)

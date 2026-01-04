@@ -435,30 +435,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_plot_type.pack(fill="x", pady=(0, 10))
         
-        # X-Axis section
-        x_axis_label = ttk.Label(self.second_scrollable_frame, text="📐 X-Axis:", font=("Arial", 10, "bold"))
-        x_axis_label.pack(anchor="w", pady=(5, 2))
-        
-        self.ms_x_axis = PopoverMultiSelect(
-            self.second_scrollable_frame,
-            header="Select X-Axis",
-            items=["Configuration Parameters"],
-            width=35
-        )
-        self.ms_x_axis.pack(fill="x", pady=(0, 10))
-        
-        # Y-Axis section
-        y_axis_label = ttk.Label(self.second_scrollable_frame, text="📏 Y-Axis:", font=("Arial", 10, "bold"))
-        y_axis_label.pack(anchor="w", pady=(5, 2))
-        
-        self.ms_y_axis = PopoverMultiSelect(
-            self.second_scrollable_frame,
-            header="Select Y-Axis",
-            items=["Loss Factor", "Q-Error", "P-Error"],
-            width=35
-        )
-        self.ms_y_axis.pack(fill="x", pady=(0, 10))
-        
         # Metric section
         metric_label = ttk.Label(self.second_scrollable_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
         metric_label.pack(anchor="w", pady=(5, 2))
