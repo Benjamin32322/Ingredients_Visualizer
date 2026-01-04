@@ -585,7 +585,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             text="Filter Configuration:",
             font=("Arial", 10, "bold")
         )
-        filter_label.pack(anchor="w", pady=(0, 10))
+        filter_label.pack(anchor="w", pady=(5, 2))
 
         # Container for all filter rows
         self.filter_rows_container = ttk.Frame(self.third_scrollable_frame)
