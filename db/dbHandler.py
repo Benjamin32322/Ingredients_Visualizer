@@ -124,8 +124,18 @@ def execute_query(file_nr,filters=None):
         case 6:
             try:
                 sql = open(SQL_PATH_QUERY_ANALYSIS).read()
+                sql = sql.replace("{PG_NAME_FILTER}",filters.get("PG_NAME_FILTER"))
+                sql = sql.replace("{CP_NAME_FILTER}", filters.get("CP_NAME_FILTER"))
+                sql = sql.replace("{CF_JOIN_BUNDLE_FILTER}", filters.get("BPI_CF_JOIN_BUNDLE_FILTER"))
+                sql = sql.replace("{CF_MAT_FILTER}", filters.get("BPI_CF_MAT_FILTER"))
+                sql = sql.replace("{CF_CONCAT_FILTER}", filters.get("BPI_CF_CONCAT_FILTER"))
+                sql = sql.replace("{CF_HOST_ID_FILTER}", filters.get("WP_CF_HOST_ID_FILTER"))
+                sql = sql.replace("{BPC_NAME_FILTER}", filters.get("BPC_NAME_FILTER"))
+                sql = sql.replace("{QUERY_NAME_FILTER}", filters.get("QUERY_NAME_FILTER"))
+
                 columns = [desc[0] for desc in connect_to_db().execute(sql).description]
                 result = connect_to_db().execute(sql).fetchall()
+
 
                 return columns, result
             except Exception as ex:
