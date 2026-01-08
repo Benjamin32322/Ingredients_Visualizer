@@ -124,17 +124,32 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.footer_frame = ttk.Frame(self.main_container, style="Footer.TFrame")
         self.footer_frame.pack(fill="x", side="bottom")
         
-        # Main content area with grid layout - pack after footer
+        # Main content area - pack after footer
         self.content_frame = ttk.Frame(self.main_container)
         self.content_frame.pack(fill="both", expand=True, pady=(0, 10))
         
-        # Configure grid weights for responsive layout
-        # Use uniform groups to ensure columns and rows maintain equal proportions
+        # Create left and right columns for the 4 main frames
+        self.left_column = ttk.Frame(self.content_frame)
+        self.left_column.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        
+        self.right_column = ttk.Frame(self.content_frame)
+        self.right_column.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        
+        # Configure main grid (left column, right column, execute button)
         self.content_frame.grid_columnconfigure(0, weight=1, uniform="cols")
         self.content_frame.grid_columnconfigure(1, weight=1, uniform="cols")
-        self.content_frame.grid_rowconfigure(0, weight=1, uniform="rows")
-        self.content_frame.grid_rowconfigure(1, weight=1, uniform="rows")
-        self.content_frame.grid_rowconfigure(2, weight=0)  # Execute button row - no expansion
+        self.content_frame.grid_rowconfigure(0, weight=1)  # Main frames row
+        self.content_frame.grid_rowconfigure(1, weight=0)  # Execute button row
+        
+        # Configure left column - equal rows
+        self.left_column.grid_rowconfigure(0, weight=1, uniform="left_rows")
+        self.left_column.grid_rowconfigure(1, weight=1, uniform="left_rows")
+        self.left_column.grid_columnconfigure(0, weight=1)
+        
+        # Configure right column - Plotting smaller, Results larger
+        self.right_column.grid_rowconfigure(0, weight=1)  # Plotting - smaller (less space)
+        self.right_column.grid_rowconfigure(1, weight=8)  # Results - much larger (more space)
+        self.right_column.grid_columnconfigure(0, weight=1)
 
     def build_header(self):
         """Build the application header"""
@@ -168,48 +183,48 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     def create_query_configuration_section(self):
         """Create the query configuration section (top-left)"""
         self.first_frame = ttk.LabelFrame(
-            self.content_frame,
+            self.left_column,
             text="⚙️ Query Configuration",
             style="Card.TFrame",
             padding=20
         )
-        self.first_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5), pady=(0, 5))
+        self.first_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
         
         self.build_first_frame()
 
     def create_analysis_tools_section(self):
         """Create the plotting section (top-right)"""
         self.second_frame = ttk.LabelFrame(
-            self.content_frame,
+            self.right_column,
             text="📊 Plotting",
             style="Card.TFrame",
             padding=20
         )
-        self.second_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 5))
+        self.second_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
         
         self.build_second_frame()
 
     def create_detail_filters_section(self):
         """Create the detail filters section (bottom-left)"""
         self.third_frame = ttk.LabelFrame(
-            self.content_frame,
+            self.left_column,
             text="🔧 Detailed Query Configuration",
             style="Card.TFrame",
             padding=20
         )
-        self.third_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(5, 0))
+        self.third_frame.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
         
         self.build_third_frame()
 
     def create_results_section(self):
         """Create the results information section (bottom-right)"""
         self.results_frame = ttk.LabelFrame(
-            self.content_frame,
+            self.right_column,
             text="📈 Results & Information",
             style="Card.TFrame",
             padding=20
         )
-        self.results_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
+        self.results_frame.grid(row=1, column=0, sticky="nsew", pady=(5, 0))
         
         self.build_results_info_section()
 
@@ -221,7 +236,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             style="Card.TFrame",
             padding=15
         )
-        self.execute_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=0, pady=(10, 0))
+        self.execute_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         
         # Create the execute button with bigger font (font configured in style.py)
         self.execute_button = ttk.Button(
@@ -382,38 +397,9 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
     def build_second_frame(self):
         """Build the plotting section with plot type selection and axis configuration"""
         
-        # Create a canvas and scrollbar for scrolling
-        self.second_canvas = tk.Canvas(self.second_frame, highlightthickness=0)
-        self.second_scrollbar = ttk.Scrollbar(self.second_frame, orient="vertical", command=self.second_canvas.yview)
-        self.second_scrollable_frame = ttk.Frame(self.second_canvas)
-        
-        # Configure the canvas
-        self.second_scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.second_canvas.configure(scrollregion=self.second_canvas.bbox("all"))
-        )
-        
-        # Create window with padding on the right to space widgets from scrollbar
-        self.second_canvas.create_window((0, 0), window=self.second_scrollable_frame, anchor="nw", width=self.second_canvas.winfo_reqwidth())
-        self.second_canvas.configure(yscrollcommand=self.second_scrollbar.set)
-        
-        # Pack the scrollbar close to right border and canvas with space for widgets
-        self.second_scrollbar.pack(side="right", fill="y", padx=(0, 1))
-        self.second_canvas.pack(side="left", fill="both", expand=True)
-        
-        # Update canvas window width when canvas is resized
-        def _configure_canvas(event):
-            # Set the width of the scrollable frame to match canvas width minus scrollbar width and spacing
-            canvas_width = event.width - 15  # Account for scrollbar width and spacing
-            self.second_canvas.itemconfig(self.second_canvas.find_withtag("all")[0], width=canvas_width)
-        
-        self.second_canvas.bind("<Configure>", _configure_canvas)
-        
-        # Enable mousewheel scrolling
-        def _on_mousewheel(event):
-            self.second_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        self.second_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Use a simple frame without scrollbar
+        self.second_scrollable_frame = ttk.Frame(self.second_frame)
+        self.second_scrollable_frame.pack(fill="both", expand=True)
         
         # Section description
         description_label = ttk.Label(
@@ -441,7 +427,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         # Create a horizontal frame for metric selectors and number input
         metric_frame = ttk.Frame(self.second_scrollable_frame)
-        metric_frame.pack(fill="x", pady=(0, 10))
+        metric_frame.pack(fill="x", pady=(0, 15))
         
         # Aggregation metric selector on the left (avg, median, etc.)
         agg_metric_frame = ttk.Frame(metric_frame)
