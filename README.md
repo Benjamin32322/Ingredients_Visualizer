@@ -1,0 +1,1 @@
+Move the pgb_job_0.db into the project folder, before starting the App.
