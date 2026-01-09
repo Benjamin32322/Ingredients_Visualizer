@@ -519,7 +519,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         
         self.ms_analysis_parameter = PopoverMultiSelect(
             self.third_scrollable_frame,
-            header="Select Analysis Parameter",
+            header="* Select Analysis Parameter",
             items=["Loss Factor Analysis", "Q-Error Analysis", "P-Error Analysis"],
             width=35
         )

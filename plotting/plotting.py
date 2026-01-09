@@ -1,7 +1,7 @@
 # plotting.py
 # This file contains plotting functionality using matplotlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
@@ -449,6 +449,48 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
     canvas.draw()
     canvas.get_tk_widget().pack(fill='both', expand=True, padx=10, pady=10)
     
+    # Create a toolbar frame for buttons
+    toolbar = ttk.Frame(plot_window)
+    toolbar.pack(side="bottom", fill="x", pady=5)
+    
+    # Export functions
+    def export_to_pdf():
+        try:
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".pdf",
+                filetypes=[("PDF File", "*.pdf"), ("All Files", "*.*")]
+            )
+            if not filepath:
+                return  # User cancelled
+            
+            # Save the figure as PDF
+            fig.savefig(filepath, format='pdf', bbox_inches='tight', dpi=300)
+            messagebox.showinfo("Export Successful", f"Plot saved as PDF:\n{filepath}")
+        except Exception as e:
+            messagebox.showerror("Export Error", str(e))
+    
+    def export_to_png():
+        try:
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG Image", "*.png"), ("All Files", "*.*")]
+            )
+            if not filepath:
+                return  # User cancelled
+            
+            # Save the figure as PNG
+            fig.savefig(filepath, format='png', bbox_inches='tight', dpi=300)
+            messagebox.showinfo("Export Successful", f"Plot saved as PNG:\n{filepath}")
+        except Exception as e:
+            messagebox.showerror("Export Error", str(e))
+    
+    # Add export buttons
+    btn_export_pdf = ttk.Button(toolbar, text="Export as PDF", command=export_to_pdf)
+    btn_export_pdf.pack(side="left", padx=5)
+    
+    btn_export_png = ttk.Button(toolbar, text="Export as PNG", command=export_to_png)
+    btn_export_png.pack(side="left", padx=5)
+    
     # Add a close button
-    close_button = ttk.Button(plot_window, text="Close", command=plot_window.destroy)
-    close_button.pack(pady=5)
+    close_button = ttk.Button(toolbar, text="Close", command=plot_window.destroy)
+    close_button.pack(side="right", padx=5)

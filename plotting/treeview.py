@@ -15,43 +15,35 @@ def plot_treeview(columns, data, params_summary=""):
     toolbar = ttk.Frame(plot_window)
     toolbar.pack(side="top", fill="x")
 
-    def export_to_excel():
+    def export_to_csv():
         try:
             df = pd.DataFrame(data, columns=columns)
 
             # Dialog für Speicherort
             filepath = filedialog.asksaveasfilename(
-                defaultextension=".xlsx",
-                filetypes=[("Excel-Datei", "*.xlsx"), ("Alle Dateien", "*.*")]
+                defaultextension=".csv",
+                filetypes=[("CSV-Datei", "*.csv"), ("Alle Dateien", "*.*")]
             )
             if not filepath:
                 return  # Abbrechen
 
-            # Create Excel writer
-            with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
-                # If we have params_summary, add it as header rows before data
-                if params_summary:
-                    # Create a DataFrame with parameter info and empty row for spacing
-                    params_rows = [
-                        ['Query Parameters:', params_summary],
-                        ['', '']  # Empty row for spacing
-                    ]
-                    params_df = pd.DataFrame(params_rows)
-                    
-                    # Write parameters first
-                    params_df.to_excel(writer, sheet_name='Data', index=False, header=False)
-                    
-                    # Write data below parameters (starting at row 3, since 0-indexed + 2 param rows)
-                    df.to_excel(writer, sheet_name='Data', index=False, startrow=len(params_rows))
-                else:
-                    # No parameters, just write data
-                    df.to_excel(writer, sheet_name='Data', index=False)
+            # Export to CSV
+            if params_summary:
+                # Add parameter info as comment lines at the top
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(f"# Query Parameters: {params_summary}\n")
+                    f.write("#\n")
+                    # Write the DataFrame
+                    df.to_csv(f, index=False)
+            else:
+                # No parameters, just write data
+                df.to_csv(filepath, index=False, encoding='utf-8')
             
             messagebox.showinfo("Export erfolgreich", f"Datei gespeichert:\n{filepath}")
         except Exception as e:
             messagebox.showerror("Fehler beim Export", str(e))
 
-    btn_export = ttk.Button(toolbar, text="Als Excel exportieren", command=export_to_excel)
+    btn_export = ttk.Button(toolbar, text="Export as CSV", command=export_to_csv)
     btn_export.pack(pady=8)
 
     # Display parameter summary if provided
