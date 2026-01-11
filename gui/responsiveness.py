@@ -92,7 +92,7 @@ class ResponsivenessMixin:
     def update_detail_entries_visibility(self):
         """Update visibility of second entry based on filter selection"""
         selected_filter = self.ms_filter_detail.get_selected()
-        if "zwischen" in selected_filter:
+        if "between" in selected_filter:
             if not self.eingabe_detail_2.winfo_ismapped():
                 self.eingabe_detail_2.pack(fill="x", pady=(5, 0))
         else:

@@ -251,11 +251,11 @@ class QueryHandlersMixin:
             "perr": "perr"
         }
         
-        # Map German comparison types to SQL operators
+        # Map comparison types to SQL operators
         comparison_map = {
-            "größer als": ">",
-            "kleiner als": "<",
-            "gleich": "="
+            "greater than": ">",
+            "less than": "<",
+            "equal": "="
         }
         
         # Build SQL conditions for each filter
@@ -271,10 +271,21 @@ class QueryHandlersMixin:
                 continue
             
             sql_metric = metric_to_sql.get(metric, metric)
-            operator = comparison_map.get(comparison, ">")
-            condition = f"{sql_metric} {operator} {value}"
-            conditions.append(condition)
-            print(f"  Filter {i+1}: {metric} {comparison} {value} -> {condition}")
+            
+            # Handle "between" comparison separately
+            if comparison == "between":
+                if isinstance(value, tuple) and len(value) == 2:
+                    condition = f"{sql_metric} BETWEEN {value[0]} AND {value[1]}"
+                    conditions.append(condition)
+                    print(f"  Filter {i+1}: {metric} {comparison} {value[0]};{value[1]} -> {condition}")
+                else:
+                    print(f"  Filter {i+1}: Invalid 'between' value format, skipping")
+                    continue
+            else:
+                operator = comparison_map.get(comparison, ">")
+                condition = f"{sql_metric} {operator} {value}"
+                conditions.append(condition)
+                print(f"  Filter {i+1}: {metric} {comparison} {value} -> {condition}")
         
         # Combine all conditions with AND
         if conditions:

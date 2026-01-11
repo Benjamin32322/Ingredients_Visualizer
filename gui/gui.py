@@ -641,7 +641,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         comparison_select = PopoverMultiSelect(
             comparison_frame,
             header="Select Comparison",
-            items=["größer als", "kleiner als", "gleich", "zwischen"],
+            items=["greater than", "less than", "equal", "between"],
             width=20,
             height=4
         )
@@ -690,7 +690,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.update_status(f"Filter row removed - {len(self.filter_rows)} row(s) remaining")
         
     def validate_numerical_input(self, string_var, entry_widget):
-        """Validate and normalize numerical input: only allow numbers, dots, minus, and convert commas to dots"""
+        """Validate and normalize numerical input: only allow numbers, dots, minus, semicolons, and convert commas to dots"""
         # Prevent recursive calls
         validation_attr = f'_validating_{id(string_var)}'
         if hasattr(self, validation_attr) and getattr(self, validation_attr):
@@ -704,23 +704,32 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             # Normalize: replace comma with dot
             normalized_text = current_text.replace(',', '.')
             
-            # Validate: only allow digits, dots, minus sign, and spaces
-            valid_chars = set('0123456789.- ')
+            # Validate: only allow digits, dots, minus sign, semicolon, and spaces
+            valid_chars = set('0123456789.-; ')
             filtered_text = ''.join(c for c in normalized_text if c in valid_chars)
             
-            # Prevent multiple dots
-            if filtered_text.count('.') > 1:
-                # Keep only the first dot
-                parts = filtered_text.split('.')
-                filtered_text = parts[0] + '.' + ''.join(parts[1:])
+            # Split by semicolon to validate each part separately (for "between" case)
+            parts = filtered_text.split(';')
+            validated_parts = []
             
-            # Prevent multiple minus signs and ensure minus is only at the beginning
-            if filtered_text.count('-') > 1:
-                # Keep only the first minus
-                filtered_text = filtered_text.replace('-', '', filtered_text.count('-') - 1)
-            if '-' in filtered_text and filtered_text.index('-') != 0:
-                # Move minus to the beginning
-                filtered_text = '-' + filtered_text.replace('-', '')
+            for part in parts:
+                part = part.strip()
+                
+                # Prevent multiple dots in each part
+                if part.count('.') > 1:
+                    dot_parts = part.split('.')
+                    part = dot_parts[0] + '.' + ''.join(dot_parts[1:])
+                
+                # Prevent multiple minus signs and ensure minus is only at the beginning
+                if part.count('-') > 1:
+                    part = part.replace('-', '', part.count('-') - 1)
+                if '-' in part and part.index('-') != 0:
+                    part = '-' + part.replace('-', '')
+                
+                validated_parts.append(part)
+            
+            # Rejoin with semicolon (max 2 parts for "between")
+            filtered_text = ';'.join(validated_parts[:2])
             
             # Update if changed
             if filtered_text != current_text:
@@ -1079,8 +1088,8 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         Returns:
             list: List of filter dictionaries, each containing:
                 - 'metric': Selected metric (e.g., 'avg_lf')
-                - 'comparison': Selected comparison type (e.g., 'größer als', 'zwischen')
-                - 'value': Numeric value from entry field (as float or None)
+                - 'comparison': Selected comparison type (e.g., 'greater than', 'between')
+                - 'value': Numeric value from entry field (as float, tuple for 'between', or None)
         """
         filters = []
         
@@ -1112,10 +1121,22 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                 if value_var:
                     value_str = value_var.get().strip()
                     if value_str:
-                        try:
-                            filter_dict['value'] = float(value_str)
-                        except ValueError:
-                            filter_dict['value'] = None
+                        # Check if this is a "between" value (contains semicolon)
+                        if ';' in value_str and filter_dict['comparison'] == 'between':
+                            try:
+                                parts = value_str.split(';')
+                                if len(parts) >= 2:
+                                    val1 = float(parts[0].strip())
+                                    val2 = float(parts[1].strip())
+                                    # Ensure val1 <= val2 for BETWEEN syntax
+                                    filter_dict['value'] = (min(val1, val2), max(val1, val2))
+                            except ValueError:
+                                filter_dict['value'] = None
+                        else:
+                            try:
+                                filter_dict['value'] = float(value_str)
+                            except ValueError:
+                                filter_dict['value'] = None
                 
                 # Only add filter if it has at least a metric selected
                 if filter_dict['metric']:
