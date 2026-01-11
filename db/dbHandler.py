@@ -5,9 +5,7 @@ Handles database connections, SQL query execution, and filter building.
 All database column names and SQL placeholders are imported from db_config.py
 """
 from config import (
-    DB_PATH, SQL_PATH_LOSS_FACTOR, SQL_PATH_Q_ERROR, SQL_PATH_P_ERROR, 
-    SQL_PATH_PLAENE, SQL_PATH_DETAIL_ANALYSIS, SQL_PATH_QUERY_ANALYSIS, 
-    SQL_PATH_P_ERROR_CALCULATION, SQL_PATH_ALL_AGGREGATED, SQL_PATH_ALL_SINGLE_QUERY
+    DB_PATH, SQL_PATH_PLAENE, SQL_PATH_ALL_AGGREGATED, SQL_PATH_ALL_SINGLE_QUERY
 )
 from db.db_config import FILTER_KEY_MAP, ANALYSIS_TYPES
 
@@ -115,12 +113,7 @@ def _execute_sql(sql, debug_label=None):
 
 # Maps query IDs to their SQL file paths
 QUERY_FILE_MAP = {
-    1: SQL_PATH_LOSS_FACTOR,
     2: SQL_PATH_PLAENE,
-    3: SQL_PATH_Q_ERROR,
-    4: SQL_PATH_P_ERROR,
-    5: SQL_PATH_DETAIL_ANALYSIS,
-    6: SQL_PATH_QUERY_ANALYSIS,
     7: SQL_PATH_ALL_AGGREGATED,
     8: SQL_PATH_ALL_SINGLE_QUERY,
 }
