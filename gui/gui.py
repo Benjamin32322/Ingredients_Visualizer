@@ -971,6 +971,8 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             # Query mode - disable aggregation selection
             self.ms_agg_metric.button.config(state="disabled")
             self.ms_agg_metric.button.config(style="Disabled.TButton")
+            # Reset to default header when disabled
+            self.ms_agg_metric._var.set(self.ms_agg_metric._header)
             
             # Update filter row metrics to raw values (lf, qerr, perr) for single query mode
             self.update_filter_row_metrics_for_query_mode(query_mode=True)
@@ -1008,6 +1010,8 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             # Box Plot selected - disable Metric popover and number entry
             self.ms_metric.button.config(state="disabled")
             self.ms_metric.button.config(style="Disabled.TButton")
+            # Reset to default header when disabled
+            self.ms_metric._var.set(self.ms_metric._header)
             self.plot_number_entry.config(state="disabled")
         else:
             # Other plot types - enable Metric popover and number entry
