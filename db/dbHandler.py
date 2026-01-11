@@ -112,10 +112,13 @@ def _execute_sql(sql, debug_label=None):
 # =============================================================================
 
 # Maps query IDs to their SQL file paths
+# 1: Pläne treeview (detail view)
+# 2: All Aggregated (grouped metrics)
+# 3: All Single Query (individual query results)
 QUERY_FILE_MAP = {
-    2: SQL_PATH_PLAENE,
-    7: SQL_PATH_ALL_AGGREGATED,
-    8: SQL_PATH_ALL_SINGLE_QUERY,
+    1: SQL_PATH_PLAENE,
+    2: SQL_PATH_ALL_AGGREGATED,
+    3: SQL_PATH_ALL_SINGLE_QUERY,
 }
 
 
@@ -149,10 +152,10 @@ def execute_query(file_nr, filters=None):
         # Apply standard filters
         sql = _apply_standard_filters(sql, filters)
         
-        # Handle special cases for metric columns (query 7 and 8)
-        if file_nr in (7, 8):
+        # Handle special cases for metric columns (query 2 and 3)
+        if file_nr in (2, 3):
             analysis_type = filters.get("ANALYSIS_TYPE", "LF")
-            is_aggregated = (file_nr == 7)
+            is_aggregated = (file_nr == 2)
             sql = _apply_metric_columns(sql, analysis_type, is_aggregated)
             
             # Set default for DETAIL_METRIC_FILTER if not present
@@ -162,11 +165,7 @@ def execute_query(file_nr, filters=None):
             debug_label = f"{'All Aggregated' if is_aggregated else 'All Single'} Query (query_id={file_nr}, analysis_type={analysis_type})"
             return _execute_sql(sql, debug_label)
         
-        # Query 5 has debug output
-        if file_nr == 5:
-            return _execute_sql(sql, f"Final SQL Query (query_id=5)")
-        
-        # Standard queries (1-4, 6)
+        # Standard queries (query 1: Pläne treeview)
         return _execute_sql(sql)
         
     except Exception as ex:

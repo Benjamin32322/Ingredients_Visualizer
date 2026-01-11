@@ -19,8 +19,8 @@ class QueryHandlersMixin:
     def choose_correct_query(self):
         """
         Simplified query routing:
-        1. If "Query Selection" has items → use all_single_query.sql (query_id=8)
-        2. Otherwise → use all_aggregated.sql (query_id=7)
+        1. If "Query Selection" has items → use all_single_query.sql (query_id=3)
+        2. Otherwise → use all_aggregated.sql (query_id=2)
         
         Both queries support filtering on any metric and display only selected analysis columns.
         """
@@ -47,21 +47,21 @@ class QueryHandlersMixin:
         # Route to appropriate query
         if selected_queries and len(selected_queries) > 0:
             # User selected specific queries → use single query (no aggregation)
-            print(f"  -> Using All Single Query (query_id=8)")
-            self.on_execute(query_id=8, analysis_type=analysis_type)
+            print(f"  -> Using All Single Query (query_id=3)")
+            self.on_execute(query_id=3, analysis_type=analysis_type)
         else:
             # No specific queries → use aggregated query
-            print(f"  -> Using All Aggregated Query (query_id=7)")
-            self.on_execute(query_id=7, analysis_type=analysis_type)
+            print(f"  -> Using All Aggregated Query (query_id=2)")
+            self.on_execute(query_id=2, analysis_type=analysis_type)
         
         print("=" * 60)
     
-    def on_execute(self, query_id=7, analysis_type="Loss Factor"):
+    def on_execute(self, query_id=2, analysis_type="Loss Factor"):
         """
         Execute analysis query
         
         Args:
-            query_id (int): Query identifier (1 for Loss Factor, 3 for Q-Error, 4 for P-Error, 5 for Detail Query)
+            query_id (int): Query identifier (1=Pläne, 2=Aggregated, 3=Single Query)
             analysis_type (str): Type of analysis for status message
         """
         selected_pg = self.ms_plan_generator.get_selected()
@@ -95,7 +95,7 @@ class QueryHandlersMixin:
         qg_filter = build_filter("ps_qg", selected_qg)
         cf_filter = build_cost_filters(selected_cf)
         
-        # Simplified filter setup - both query_id=7 and query_id=8 use the same structure
+        # Simplified filter setup - both query_id=2 and query_id=3 use the same structure
         filters = {
             "PG_NAME_FILTER": pg_filter,
             "CP_NAME_FILTER": cp_filter,
@@ -155,8 +155,8 @@ class QueryHandlersMixin:
             y_axis = selected_y_axis[0] if selected_y_axis and len(selected_y_axis) > 0 else None
             
             # Get aggregation metric selection (e.g., avg_lf, max_qerr, etc.)
-            # In query mode (query_id=8), use the metric column directly (lf, qerr, perr)
-            if query_id == 8:
+            # In query mode (query_id=3), use the metric column directly (lf, qerr, perr)
+            if query_id == 3:
                 # Query mode - use y_axis value as metric
                 agg_metric = y_axis if y_axis else None
             else:
@@ -205,20 +205,6 @@ class QueryHandlersMixin:
             parts.append(f"Cost Functions: {' | '.join(cf_parts)}")
         else:
             parts.append("Cost Functions: All")
-        
-        # Detail filters (only for query_id=5)
-        if detail_filter_values and query_id == 5 and isinstance(detail_filter_values, list):
-            filter_parts = []
-            for filter_dict in detail_filter_values:
-                metric = filter_dict.get('metric')
-                comparison = filter_dict.get('comparison')
-                value = filter_dict.get('value')
-                
-                if metric and comparison and value is not None:
-                    filter_parts.append(f"{metric} {comparison} {value}")
-            
-            if filter_parts:
-                parts.append(f"Detail Filters: {', '.join(filter_parts)}")
         
         return " | ".join(parts)
     

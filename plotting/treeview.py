@@ -110,7 +110,7 @@ def plot_treeview(columns, data, params_summary=""):
             print(f"{filter_key}: {filter_value}")
         
         
-        columns2, result2 = execute_query(2, filters=filters)
+        columns2, result2 = execute_query(1, filters=filters)
         
         # Pass the same params_summary to the detail view
         plot_treeview(columns2, result2, params_summary)
