@@ -12,60 +12,45 @@ class QueryHandlersMixin:
     
     def choose_correct_query(self):
         """
-        Determine the correct query based on GUI inputs.
-        If all detail filter fields have values, use query_id=5 (DetailQuery).
-        Otherwise, route to the selected analysis method.
+        Simplified query routing:
+        1. If "Query Selection" has items → use all_single_query.sql (query_id=8)
+        2. Otherwise → use all_aggregated.sql (query_id=7)
+        
+        Both queries support filtering on any metric and display only selected analysis columns.
         """
-        # Check if all detail filter fields have values
-        detail_filters = self.get_detail_filter_values()
         print("=" * 60)
-        print("DEBUG: choose_correct_query - detail_filters:")
-        print(f"  Number of filter rows: {len(detail_filters)}")
+        print("DEBUG: choose_correct_query")
         
-        # Check if at least one complete filter exists
-        has_complete_filter = False
-        for i, filter_row in enumerate(detail_filters):
-            print(f"  Filter {i+1}:")
-            print(f"    metric: {filter_row.get('metric')}")
-            print(f"    comparison: {filter_row.get('comparison')}")
-            print(f"    value: {filter_row.get('value')}")
-            
-            # A filter is complete if it has metric, comparison, and value
-            if (filter_row.get('metric') and 
-                filter_row.get('comparison') and 
-                filter_row.get('value') is not None):
-                has_complete_filter = True
+        # Get user selections
+        selected_queries = self.ms_query_selection.get_selected()
+        selected_methods = self.ms_analysis_parameter.get_selected()
         
-        print(f"  has_complete_filter: {has_complete_filter}")
-        
-        # If at least one complete filter exists, use DetailQuery (query_id=5)
-        if has_complete_filter:
-            print("  -> Using DetailQuery (query_id=5)")
-            self.on_execute(query_id=5, analysis_type="Detail Query")
+        # Determine analysis type
+        if "Loss Factor Analysis" in selected_methods:
+            analysis_type = "Loss Factor"
+        elif "Q-Error Analysis" in selected_methods:
+            analysis_type = "Q-Error"
+        elif "P-Error Analysis" in selected_methods:
+            analysis_type = "P-Error"
         else:
-            # Check if a query is selected in Query Selection popover
-            selected_queries = self.ms_query_selection.get_selected()
-            
-            if selected_queries and len(selected_queries) > 0:
-                # If a query is selected, use Query Analysis (query_id=6)
-                print(f"  -> Using Query Analysis (query_id=6) for selected queries: {selected_queries}")
-                self.on_execute(query_id=6, analysis_type="Query Analysis")
-            else:
-                # Otherwise, execute based on selected analysis method
-                selected_methods = self.ms_analysis_parameter.get_selected()
-                print(f"  -> Using selected analysis: {selected_methods}")
-                
-                if "Loss Factor Analysis" in selected_methods:
-                    self.on_execute(query_id=1, analysis_type="Loss Factor")
-                elif "Q-Error Analysis" in selected_methods:
-                    self.on_execute(query_id=3, analysis_type="Q-Error")
-                elif "P-Error Analysis" in selected_methods:
-                    self.on_execute(query_id=4, analysis_type="P-Error")
-                else:
-                    self.update_status("Please select an analysis method or a query")
+            analysis_type = "Loss Factor"  # Default
+        
+        print(f"  Selected Analysis: {analysis_type}")
+        print(f"  Selected Queries: {selected_queries}")
+        
+        # Route to appropriate query
+        if selected_queries and len(selected_queries) > 0:
+            # User selected specific queries → use single query (no aggregation)
+            print(f"  -> Using All Single Query (query_id=8)")
+            self.on_execute(query_id=8, analysis_type=analysis_type)
+        else:
+            # No specific queries → use aggregated query
+            print(f"  -> Using All Aggregated Query (query_id=7)")
+            self.on_execute(query_id=7, analysis_type=analysis_type)
+        
         print("=" * 60)
     
-    def on_execute(self, query_id=1, analysis_type="Loss Factor"):
+    def on_execute(self, query_id=7, analysis_type="Loss Factor"):
         """
         Execute analysis query
         
@@ -89,40 +74,38 @@ class QueryHandlersMixin:
         qg_filter = build_filter("ps_qg", selected_qg)
         cf_filter = build_cost_filters(selected_cf)
         
-        # Use different filter names based on query type
-        if query_id == 1:
-            filters = {
-                "PG_NAME_FILTER": pg_filter,
-                "CP_NAME_FILTER": cp_filter,
-                "BPC_NAME_FILTER": bpc_filter,
-                "QUERY_NAME_FILTER": qg_filter
-            }
-        elif query_id == 5:
-            # Detail Query requires DETAIL_METRIC_FILTER and BPC_NAME_FILTER
-            filters = {
-                "PG_NAME_FILTER": pg_filter,
-                "CP_NAME_FILTER": cp_filter,
-                "BPC_NAME_FILTER": bpc_filter,
-                "QUERY_NAME_FILTER": qg_filter
-            }
-            # Build detail metric filter
-            detail_filter_values = self.get_detail_filter_values()
-            detail_metric_filter = self.build_detail_metric_filter(detail_filter_values)
-            print("\nDEBUG: on_execute (query_id=5)")
-            print(f"  detail_filter_values: {detail_filter_values}")
-            print(f"  Generated DETAIL_METRIC_FILTER: {detail_metric_filter}")
-            filters["DETAIL_METRIC_FILTER"] = detail_metric_filter
-        else:
-            filters = {
-                "PG_NAME_FILTER": pg_filter,
-                "CP_NAME_FILTER": cp_filter,
-                "BPC_NAME_FILTER": bpc_filter,
-                "QUERY_NAME_FILTER": qg_filter
-            }
+        # Simplified filter setup - both query_id=7 and query_id=8 use the same structure
+        filters = {
+            "PG_NAME_FILTER": pg_filter,
+            "CP_NAME_FILTER": cp_filter,
+            "BPC_NAME_FILTER": bpc_filter,
+            "QUERY_NAME_FILTER": qg_filter
+        }
         
+        # Add detail metric filter if exists
+        detail_filter_values = self.get_detail_filter_values()
+        detail_metric_filter = self.build_detail_metric_filter(detail_filter_values)
+        filters["DETAIL_METRIC_FILTER"] = detail_metric_filter
+        
+        # Set analysis type for column selection
+        if analysis_type == "Loss Factor":
+            filters["ANALYSIS_TYPE"] = "LF"
+        elif analysis_type == "Q-Error":
+            filters["ANALYSIS_TYPE"] = "QERR"
+        elif analysis_type == "P-Error":
+            filters["ANALYSIS_TYPE"] = "PERR"
+        else:
+            filters["ANALYSIS_TYPE"] = "LF"  # default
+        
+        # Add cost function filters
         filters.update(cf_filter)
+        
+        print(f"\nDEBUG: on_execute (query_id={query_id}, analysis_type={analysis_type})")
+        print(f"  detail_metric_filter: {detail_metric_filter}")
+        
+        # Execute the query
         columns, result = execute_query(query_id, filters=filters)
-
+        
         # Build parameter summary for display and export
         params_summary = self.build_params_summary(
             query_id=query_id,
@@ -131,7 +114,7 @@ class QueryHandlersMixin:
             selected_cp=selected_cp,
             selected_bpc=selected_bpc,
             selected_cf=selected_cf,
-            detail_filter_values=detail_filter_values if query_id == 5 else None
+            detail_filter_values=detail_filter_values
         )
         
         # Check if a plot type is selected

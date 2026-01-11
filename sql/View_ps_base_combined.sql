@@ -1,3 +1,6 @@
+-- Combined View: v_ps_base with P-Error calculation
+-- This replaces both View_ps_base.sql and View_p-error.sql
+
 CREATE OR REPLACE VIEW v_ps_base AS
 
 SELECT
@@ -18,7 +21,13 @@ SELECT
   ps.ps_max_card_probe,
   ps.ps_max_card_pc,
   ps.ps_cost_pg,
-  ps.ps_cost_tru
+  ps.ps_cost_tru,
+  -- P-Error calculation
+  CASE
+    WHEN ps.ps_cost_pg < ps.ps_cost_tru
+      THEN -(ps.ps_cost_tru / NULLIF(ps.ps_cost_pg, 0)) - 1
+    ELSE (ps.ps_cost_pg / NULLIF(ps.ps_cost_tru, 0)) - 1
+  END AS ps_p_error
 
 FROM plan_summary ps
 
