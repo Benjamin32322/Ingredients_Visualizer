@@ -989,6 +989,21 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         """Enable/disable Metric popover and number entry based on plot type selection"""
         selected_plot_types = self.ms_plot_type.get_selected()
         
+        # Check if aggregation is active (not disabled)
+        agg_is_active = str(self.ms_agg_metric.button.cget('state')) == 'normal'
+        
+        # Update aggregation header based on plot type selection and active state
+        if selected_plot_types and len(selected_plot_types) > 0 and agg_is_active:
+            # Plot type selected AND aggregation is active - add asterisk
+            self.ms_agg_metric._header = "* Select Aggregation"
+        else:
+            # No plot type or aggregation is disabled - no asterisk
+            self.ms_agg_metric._header = "Select Aggregation"
+        
+        # Update button text if no selection
+        if len(self.ms_agg_metric.get_selected()) == 0:
+            self.ms_agg_metric._var.set(self.ms_agg_metric._header)
+        
         if selected_plot_types and "Box Plot" in selected_plot_types:
             # Box Plot selected - disable Metric popover and number entry
             self.ms_metric.button.config(state="disabled")

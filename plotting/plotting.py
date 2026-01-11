@@ -298,38 +298,42 @@ def create_box_plot_single(ax, df, y_col, title, y_label, x_label, colors):
     # Create the box plot with one box containing ALL values
     bp = ax.boxplot([values], labels=[x_label], patch_artist=True, showmeans=True, meanline=True)
     
-    # Style the box
+    # Style the box using color palette
     bp['boxes'][0].set_facecolor(colors[0])
     bp['boxes'][0].set_alpha(0.7)
-    bp['boxes'][0].set_edgecolor('black')
+    bp['boxes'][0].set_edgecolor(colors[1] if len(colors) > 1 else colors[0])
     bp['boxes'][0].set_linewidth(1.5)
     
-    # Style whiskers
+    # Style whiskers using color palette
+    whisker_color = colors[2] if len(colors) > 2 else colors[0]
     for whisker in bp['whiskers']:
-        whisker.set_color('black')
+        whisker.set_color(whisker_color)
         whisker.set_linewidth(1.5)
     
-    # Style caps
+    # Style caps using color palette
     for cap in bp['caps']:
-        cap.set_color('black')
+        cap.set_color(whisker_color)
         cap.set_linewidth(1.5)
     
-    # Style median line
+    # Style median line using color palette
+    median_color = colors[3] if len(colors) > 3 else colors[0]
     for median in bp['medians']:
-        median.set_color('red')
+        median.set_color(median_color)
         median.set_linewidth(2)
     
-    # Style mean line
+    # Style mean line using color palette
+    mean_color = colors[4] if len(colors) > 4 else colors[1] if len(colors) > 1 else colors[0]
     for mean in bp['means']:
-        mean.set_color('green')
+        mean.set_color(mean_color)
         mean.set_linewidth(2)
         mean.set_linestyle('--')
     
-    # Style fliers (outliers)
+    # Style fliers (outliers) using color palette
+    outlier_color = colors[5] if len(colors) > 5 else colors[1] if len(colors) > 1 else colors[0]
     for flier in bp['fliers']:
         flier.set_marker('o')
-        flier.set_markerfacecolor(colors[1] if len(colors) > 1 else 'red')
-        flier.set_markeredgecolor('black')
+        flier.set_markerfacecolor(outlier_color)
+        flier.set_markeredgecolor(colors[1] if len(colors) > 1 else colors[0])
         flier.set_markersize(6)
         flier.set_alpha(0.7)
     
@@ -343,7 +347,9 @@ def create_box_plot_single(ax, df, y_col, title, y_label, x_label, colors):
     
     # Add statistics text box
     stats_text = f"n={len(values)}\nMedian={median:.2f}\nMean={mean:.2f}\nQ1={q1:.2f}\nQ3={q3:.2f}\nIQR={iqr:.2f}"
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # Use color from palette for the statistics box background
+    stats_box_color = colors[6] if len(colors) > 6 else colors[0]
+    props = dict(boxstyle='round', facecolor=stats_box_color, alpha=0.3, edgecolor=colors[1] if len(colors) > 1 else colors[0])
     ax.text(0.98, 0.98, stats_text, transform=ax.transAxes, fontsize=9,
             verticalalignment='top', horizontalalignment='right', bbox=props)
     
