@@ -548,6 +548,13 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_query_selection.pack(fill="x", pady=(0, 10))
         
+        # Bind to update aggregation availability when query selection changes
+        original_query_close = self.ms_query_selection._close
+        def query_close_with_update():
+            original_query_close()
+            self.update_aggregation_availability()
+        self.ms_query_selection._close = query_close_with_update
+        
         # Filter configuration label
         filter_label = ttk.Label(
             self.third_scrollable_frame, 
@@ -931,6 +938,19 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                 metrics = []
             
             self.ms_agg_metric.set_items(metrics)
+    
+    def update_aggregation_availability(self):
+        """Enable/disable aggregation popover based on query selection"""
+        selected_queries = self.ms_query_selection.get_selected()
+        
+        if selected_queries and len(selected_queries) > 0:
+            # Query mode - disable aggregation selection
+            self.ms_agg_metric.button.config(state="disabled")
+            self.ms_agg_metric.button.config(style="Disabled.TButton")
+        else:
+            # Aggregated mode - enable aggregation selection
+            self.ms_agg_metric.button.config(state="normal")
+            self.ms_agg_metric.button.config(style="TButton")
 
     def update_status(self, message):
         """Update the status message in the footer"""

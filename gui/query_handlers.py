@@ -64,9 +64,24 @@ class QueryHandlersMixin:
         selected_cf = self.msplus_cost_function.get_selected()
         selected_qg = self.ms_query_selection.get_selected()
         selected_plot_types = self.ms_plot_type.get_selected()
-        # Hardcoded X-Axis and Y-Axis values
-        selected_x_axis = ["Configuration Parameters"]
-        selected_y_axis = ["Loss Factor"]
+        
+        # Determine X-Axis and Y-Axis based on query selection
+        if selected_qg and len(selected_qg) > 0:
+            # Query mode - use ps_qg for x-axis and metric for y-axis
+            selected_x_axis = ["Query Graph: ps_qg"]
+            # Y-axis depends on analysis type
+            if analysis_type == "Loss Factor":
+                selected_y_axis = ["lf"]
+            elif analysis_type == "Q-Error":
+                selected_y_axis = ["qerr"]
+            elif analysis_type == "P-Error":
+                selected_y_axis = ["perr"]
+            else:
+                selected_y_axis = ["lf"]  # default
+        else:
+            # Aggregated mode - use configuration parameters for x-axis
+            selected_x_axis = ["Configuration Parameters"]
+            selected_y_axis = ["Loss Factor"]
 
         pg_filter = build_filter("pg_name", selected_pg)
         cp_filter = build_filter("cp_name", selected_cp)
@@ -125,8 +140,14 @@ class QueryHandlersMixin:
             y_axis = selected_y_axis[0] if selected_y_axis and len(selected_y_axis) > 0 else None
             
             # Get aggregation metric selection (e.g., avg_lf, max_qerr, etc.)
-            selected_agg_metrics = self.ms_agg_metric.get_selected()
-            agg_metric = selected_agg_metrics[0] if selected_agg_metrics and len(selected_agg_metrics) > 0 else None
+            # In query mode (query_id=8), use the metric column directly (lf, qerr, perr)
+            if query_id == 8:
+                # Query mode - use y_axis value as metric
+                agg_metric = y_axis if y_axis else None
+            else:
+                # Aggregated mode - use selected aggregation
+                selected_agg_metrics = self.ms_agg_metric.get_selected()
+                agg_metric = selected_agg_metrics[0] if selected_agg_metrics and len(selected_agg_metrics) > 0 else None
             
             # Get metric selection (Highest/Lowest)
             selected_metrics = self.ms_metric.get_selected()

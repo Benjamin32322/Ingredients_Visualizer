@@ -78,10 +78,14 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
         colors: List of colors to use
     """
     # Check if we should display configuration parameters
-    if x_col == "Configuration Parameters":
+    if x_col == "Configuration Parameters" or x_col == "Query Graph: ps_qg":
         # Configuration parameter columns to display
         config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
                       'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        
+        # Add ps_qg at the top if in query mode
+        if x_col == "Query Graph: ps_qg":
+            config_cols = ['ps_qg'] + config_cols
         
         # Create multi-line labels for each data point
         x_labels = []
@@ -94,7 +98,7 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
                                     .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
                                     .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
-                                    .replace('wp_cf_host_id', 'Host ID')
+                                    .replace('wp_cf_host_id', 'Host ID').replace('ps_qg', 'Query')
                     label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
         
@@ -118,7 +122,7 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
     
     # Set x-axis labels
     ax.set_xticks(x_positions)
-    if x_col == "Configuration Parameters":
+    if x_col == "Configuration Parameters" or x_col == "Query Graph: ps_qg":
         # For config params, use smaller font and vertical alignment
         ax.set_xticklabels(x_labels, rotation=0, ha='center', fontsize=7, multialignment='left')
     else:
@@ -154,10 +158,14 @@ def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
         y_label: Y-axis label
         colors: List of colors to use
     """
-    if x_col == "Configuration Parameters":
+    if x_col == "Configuration Parameters" or x_col == "Query Graph: ps_qg":
         # For config params, create one box per row with config labels
         config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
                       'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        
+        # Add ps_qg at the top if in query mode
+        if x_col == "Query Graph: ps_qg":
+            config_cols = ['ps_qg'] + config_cols
         
         # Create labels for each configuration
         x_labels = []
@@ -170,7 +178,7 @@ def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
                                     .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
                                     .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
-                                    .replace('wp_cf_host_id', 'Host ID')
+                                    .replace('wp_cf_host_id', 'Host ID').replace('ps_qg', 'Query')
                     label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
             data_points.append([row[y_col]])  # Single value as list for boxplot
@@ -226,7 +234,7 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
         y_label: Y-axis label
         colors: List of colors to use
     """
-    if x_col == "Configuration Parameters":
+    if x_col == "Configuration Parameters" or x_col == "Query Graph: ps_qg":
         # Use index for x-values and add configuration labels
         x_values = range(len(df))
         x_axis_label = "Configuration Parameters"
@@ -234,6 +242,11 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
         # Create multi-line labels
         config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
                       'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        
+        # Add ps_qg at the top if in query mode
+        if x_col == "Query Graph: ps_qg":
+            config_cols = ['ps_qg'] + config_cols
+        
         x_labels = []
         for idx, row in df.iterrows():
             label_parts = []
@@ -243,7 +256,7 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
                                     .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
                                     .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
-                                    .replace('wp_cf_host_id', 'Host ID')
+                                    .replace('wp_cf_host_id', 'Host ID').replace('ps_qg', 'Query')
                     label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
         
