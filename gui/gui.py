@@ -615,8 +615,15 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         metric_frame = ttk.Frame(row_frame)
         metric_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
         
-        # All available metrics (not filtered by analysis type)
-        all_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
+        # Determine which metrics to show based on query selection mode
+        selected_queries = self.ms_query_selection.get_selected() if hasattr(self, 'ms_query_selection') else []
+        if selected_queries and len(selected_queries) > 0:
+            # Query mode - use raw metrics
+            all_metrics = ["lf", "qerr", "perr"]
+        else:
+            # Aggregated mode - use aggregated metrics
+            all_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
+        
         metric_select = PopoverMultiSelect(
             metric_frame,
             header="Select Metric",
@@ -940,17 +947,40 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             self.ms_agg_metric.set_items(metrics)
     
     def update_aggregation_availability(self):
-        """Enable/disable aggregation popover based on query selection"""
+        """Enable/disable aggregation popover based on query selection and update filter row metrics"""
         selected_queries = self.ms_query_selection.get_selected()
         
         if selected_queries and len(selected_queries) > 0:
             # Query mode - disable aggregation selection
             self.ms_agg_metric.button.config(state="disabled")
             self.ms_agg_metric.button.config(style="Disabled.TButton")
+            
+            # Update filter row metrics to raw values (lf, qerr, perr) for single query mode
+            self.update_filter_row_metrics_for_query_mode(query_mode=True)
         else:
             # Aggregated mode - enable aggregation selection
             self.ms_agg_metric.button.config(state="normal")
             self.ms_agg_metric.button.config(style="TButton")
+            
+            # Update filter row metrics to aggregated values (avg_lf, median_lf, etc.)
+            self.update_filter_row_metrics_for_query_mode(query_mode=False)
+    
+    def update_filter_row_metrics_for_query_mode(self, query_mode=False):
+        """Update available metrics in filter rows based on query selection mode"""
+        if query_mode:
+            # Query mode - use raw metrics (lf, qerr, perr)
+            metrics = ["lf", "qerr", "perr"]
+        else:
+            # Aggregated mode - use aggregated metrics
+            metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
+        
+        # Update available metrics in all filter rows
+        if hasattr(self, 'filter_rows'):
+            for row in self.filter_rows:
+                metric_select = row.get('metric_select')
+                if metric_select:
+                    # Update the available items in the metric selector
+                    metric_select.set_items(metrics)
 
     def update_status(self, message):
         """Update the status message in the footer"""

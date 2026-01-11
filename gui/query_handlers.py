@@ -233,17 +233,22 @@ class QueryHandlersMixin:
         # Map metric aliases to actual SQL aggregate functions
         # Note: Only Loss Factor metrics are available in v_ps_base view
         metric_to_sql = {
+            # Aggregated mode metrics (used with all_aggregated.sql)
             "avg_lf": "AVG(ps_loss_factor)",
             "median_lf": "MEDIAN(ps_loss_factor)",
             "max_lf": "MAX(ps_loss_factor)",
             "avg_qerr": "AVG(ps_qerr_cost_pg)",
             "median_qerr": "MEDIAN(ps_qerr_cost_pg)",
             "max_qerr": "MAX(ps_qerr_cost_pg)",
-
-            # Need to be changed accordingly
-            "avg_perr": "AVG(ps_perr)",
-            "median_perr": "MEDIAN(ps_perr)",
-            "max_perr": "MAX(ps_perr)"
+            "avg_perr": "AVG(ps_p_error)",
+            "median_perr": "MEDIAN(ps_p_error)",
+            "max_perr": "MAX(ps_p_error)",
+            
+            # Raw metrics for single query mode (used with all_single_query.sql)
+            # These map directly to the column aliases in the SQL
+            "lf": "lf",
+            "qerr": "qerr",
+            "perr": "perr"
         }
         
         # Map German comparison types to SQL operators
