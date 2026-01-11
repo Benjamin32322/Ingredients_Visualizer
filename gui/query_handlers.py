@@ -132,6 +132,15 @@ class QueryHandlersMixin:
             detail_filter_values=detail_filter_values
         )
         
+        # Build config params summary for box plot x-axis label
+        config_params = {
+            'pg': selected_pg,
+            'cp': selected_cp,
+            'bpc': selected_bpc,
+            'cf': selected_cf,
+            'qg': selected_qg
+        }
+        
         # Check if a plot type is selected
         if selected_plot_types and len(selected_plot_types) > 0:
             # Plot type is selected, call plotting method
@@ -157,8 +166,8 @@ class QueryHandlersMixin:
             plot_number_str = self.plot_number_var.get().strip()
             plot_number = int(plot_number_str) if plot_number_str and plot_number_str.isdigit() else 5
             
-            # Display plot in results frame with aggregation metric
-            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, agg_metric, metric, plot_number)
+            # Display plot in results frame with aggregation metric and config params
+            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, agg_metric, metric, plot_number, config_params)
         else:
             # No plot type selected, show treeview (table) in results frame
             self.display_treeview_in_frame(columns, result, params_summary)
@@ -382,11 +391,11 @@ class QueryHandlersMixin:
         print(f"DEBUG: Treeview size: {tree.winfo_width()}x{tree.winfo_height()}")
         print("DEBUG: display_treeview_in_frame completed")
     
-    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5):
+    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5, config_params=None):
         """Display plot in the results frame"""
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from plotting.plotting import get_plot_config, create_bar_chart, create_box_plot, create_scatter_plot, create_line_graph
+        from plotting.plotting import get_plot_config, create_bar_chart, create_box_plot, create_box_plot_single, create_scatter_plot, create_line_graph
         import pandas as pd
         import tkinter as tk
         from tkinter import ttk
@@ -404,7 +413,8 @@ class QueryHandlersMixin:
             'y_axis': y_axis,
             'agg_metric': agg_metric,
             'metric': metric,
-            'plot_number': plot_number
+            'plot_number': plot_number,
+            'config_params': config_params
         }
         
         # Clear the results container
@@ -429,12 +439,6 @@ class QueryHandlersMixin:
         if agg_metric and agg_metric in df.columns:
             column = agg_metric
             
-            # Determine sort order based on metric selection
-            sort_ascending = (metric == "Lowest")
-            
-            # Get top N values
-            df_sorted = df.nlargest(plot_number, column) if not sort_ascending else df.nsmallest(plot_number, column)
-            
             # Create a readable label from the metric name
             # e.g., "avg_lf" -> "Average Loss Factor", "max_qerr" -> "Maximum Q-Error"
             metric_labels = {
@@ -449,23 +453,41 @@ class QueryHandlersMixin:
                 "avg_perr": "Average P-Error",
                 "median_perr": "Median P-Error",
                 "max_perr": "Maximum P-Error",
-                "min_perr": "Minimum P-Error"
+                "min_perr": "Minimum P-Error",
+                # Raw metrics for query mode
+                "lf": "Loss Factor",
+                "qerr": "Q-Error",
+                "perr": "P-Error"
             }
             y_label = metric_labels.get(agg_metric, agg_metric)
             
-            # Determine title based on metric selection
-            metric_text = metric if metric else "Highest"
-            title = f"{metric_text} {plot_number} {y_label}"
-            
-            # Create the appropriate plot type
-            if plot_type == "Bar Chart":
-                create_bar_chart(ax, df_sorted, x_axis, column, title, y_label, colors)
-            elif plot_type == "Box Plot":
-                create_box_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
-            elif plot_type == "Scatter Plot":
-                create_scatter_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
-            elif plot_type == "Graph":
-                create_line_graph(ax, df_sorted, x_axis, column, title, y_label, colors)
+            # Handle Box Plot differently - use ALL data, not sorted/filtered
+            if plot_type == "Box Plot":
+                # Build x-axis label from explicitly selected config parameters
+                x_axis_label = self._build_config_params_label(config_params)
+                title = f"Box Plot: {y_label}"
+                
+                # Use all values for box plot (no sorting/filtering)
+                create_box_plot_single(ax, df, column, title, y_label, x_axis_label, colors)
+            else:
+                # Other plot types - use sorted/filtered data
+                # Determine sort order based on metric selection
+                sort_ascending = (metric == "Lowest")
+                
+                # Get top N values
+                df_sorted = df.nlargest(plot_number, column) if not sort_ascending else df.nsmallest(plot_number, column)
+                
+                # Determine title based on metric selection
+                metric_text = metric if metric else "Highest"
+                title = f"{metric_text} {plot_number} {y_label}"
+                
+                # Create the appropriate plot type
+                if plot_type == "Bar Chart":
+                    create_bar_chart(ax, df_sorted, x_axis, column, title, y_label, colors)
+                elif plot_type == "Scatter Plot":
+                    create_scatter_plot(ax, df_sorted, x_axis, column, title, y_label, colors)
+                elif plot_type == "Graph":
+                    create_line_graph(ax, df_sorted, x_axis, column, title, y_label, colors)
         else:
             # No aggregation metric selected or not found in data - show placeholder
             message = f"Please select an Aggregation metric" if not agg_metric else f"Metric '{agg_metric}' not found in data"
@@ -514,6 +536,57 @@ class QueryHandlersMixin:
         plt.close(fig)  # Close the figure to free memory
         print("DEBUG: display_plot_in_frame completed")
     
+    def _build_config_params_label(self, config_params):
+        """
+        Build a label string from explicitly selected configuration parameters.
+        Only includes parameters that were explicitly chosen by the user.
+        
+        Args:
+            config_params (dict): Dictionary with keys 'pg', 'cp', 'bpc', 'cf', 'qg'
+                                  each containing a list of selected values
+        
+        Returns:
+            str: Formatted label string for x-axis
+        """
+        if not config_params:
+            return "All Configurations"
+        
+        label_parts = []
+        
+        # Plan Generator
+        pg = config_params.get('pg', [])
+        if pg and len(pg) > 0:
+            label_parts.append(f"PG: {', '.join(pg)}")
+        
+        # Cardinality Provider
+        cp = config_params.get('cp', [])
+        if cp and len(cp) > 0:
+            label_parts.append(f"CP: {', '.join(cp)}")
+        
+        # Build Plan Class
+        bpc = config_params.get('bpc', [])
+        if bpc and len(bpc) > 0:
+            label_parts.append(f"BPC: {', '.join(bpc)}")
+        
+        # Query Graph (for query mode)
+        qg = config_params.get('qg', [])
+        if qg and len(qg) > 0:
+            label_parts.append(f"Query: {', '.join(qg)}")
+        
+        # Cost Functions (from nested dict)
+        cf = config_params.get('cf', {})
+        if cf:
+            for cf_key, cf_values in cf.items():
+                if cf_values and len(cf_values) > 0:
+                    # Format the cost function name nicely
+                    cf_name = cf_key.replace('bpi_cf_', '').replace('wp_cf_', '').replace('_', ' ').title()
+                    label_parts.append(f"{cf_name}: {', '.join(cf_values)}")
+        
+        if label_parts:
+            return '\n'.join(label_parts)
+        else:
+            return "All Configurations"
+
     def _export_to_excel(self, columns, data, params_summary):
         """Export treeview data to Excel"""
         import pandas as pd

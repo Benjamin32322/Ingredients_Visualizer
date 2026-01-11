@@ -421,6 +421,13 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         )
         self.ms_plot_type.pack(fill="x", pady=(0, 10))
         
+        # Bind to update dependent controls when plot type changes
+        original_plot_type_close = self.ms_plot_type._close
+        def plot_type_close_with_update():
+            original_plot_type_close()
+            self.update_plot_type_dependent_controls()
+        self.ms_plot_type._close = plot_type_close_with_update
+        
         # Metric section
         metric_label = ttk.Label(self.second_scrollable_frame, text="📈 Metric:", font=("Arial", 10, "bold"))
         metric_label.pack(anchor="w", pady=(5, 2))
@@ -928,7 +935,8 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                     self.current_results_data.get('y_axis'),
                     self.current_results_data.get('agg_metric'),
                     self.current_results_data.get('metric'),
-                    self.current_results_data.get('plot_number', 5)
+                    self.current_results_data.get('plot_number', 5),
+                    self.current_results_data.get('config_params')
                 )
         else:
             self.update_status("No results available. Execute a query first.")
@@ -973,6 +981,24 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             
             # Update filter row metrics to aggregated values (avg_lf, median_lf, etc.)
             self.update_filter_row_metrics_for_query_mode(query_mode=False)
+        
+        # Also update plot type dependent controls
+        self.update_plot_type_dependent_controls()
+    
+    def update_plot_type_dependent_controls(self):
+        """Enable/disable Metric popover and number entry based on plot type selection"""
+        selected_plot_types = self.ms_plot_type.get_selected()
+        
+        if selected_plot_types and "Box Plot" in selected_plot_types:
+            # Box Plot selected - disable Metric popover and number entry
+            self.ms_metric.button.config(state="disabled")
+            self.ms_metric.button.config(style="Disabled.TButton")
+            self.plot_number_entry.config(state="disabled")
+        else:
+            # Other plot types - enable Metric popover and number entry
+            self.ms_metric.button.config(state="normal")
+            self.ms_metric.button.config(style="TButton")
+            self.plot_number_entry.config(state="normal")
     
     def update_filter_row_metrics_for_query_mode(self, query_mode=False):
         """Update available metrics in filter rows based on query selection mode"""
