@@ -1,9 +1,15 @@
 """
 GUI Query Handlers Module
-Handles database query execution and result processing
+Handles database query execution and result processing.
+Uses centralized configuration from db.db_config for all database-related constants.
 """
 
 from db.dbHandler import build_filter, build_cost_filters, execute_query
+from db.db_config import (
+    METRIC_TO_SQL, COMPARISON_OPERATORS, METRIC_LABELS, 
+    UI_ANALYSIS_MAP, ANALYSIS_TO_FILTER_KEY, CONFIG_PARAM_DISPLAY
+)
+from utils import build_config_params_label
 from plotting.treeview import plot_treeview
 
 
@@ -218,7 +224,8 @@ class QueryHandlersMixin:
     
     def build_detail_metric_filter(self, filter_values):
         """
-        Convert filter values to SQL HAVING clause condition for DuckDB
+        Convert filter values to SQL HAVING clause condition for DuckDB.
+        Uses centralized METRIC_TO_SQL and COMPARISON_OPERATORS from db_config.
         
         Args:
             filter_values (list): List of filter dictionaries from get_detail_filter_values()
@@ -239,34 +246,6 @@ class QueryHandlersMixin:
             print(f"  -> No filters provided, returning '1=1'")
             return "1=1"  # No filtering
         
-        # Map metric aliases to actual SQL aggregate functions
-        # Note: Only Loss Factor metrics are available in v_ps_base view
-        metric_to_sql = {
-            # Aggregated mode metrics (used with all_aggregated.sql)
-            "avg_lf": "AVG(ps_loss_factor)",
-            "median_lf": "MEDIAN(ps_loss_factor)",
-            "max_lf": "MAX(ps_loss_factor)",
-            "avg_qerr": "AVG(ps_qerr_cost_pg)",
-            "median_qerr": "MEDIAN(ps_qerr_cost_pg)",
-            "max_qerr": "MAX(ps_qerr_cost_pg)",
-            "avg_perr": "AVG(ps_p_error)",
-            "median_perr": "MEDIAN(ps_p_error)",
-            "max_perr": "MAX(ps_p_error)",
-            
-            # Raw metrics for single query mode (used with all_single_query.sql)
-            # These map directly to the column aliases in the SQL
-            "lf": "lf",
-            "qerr": "qerr",
-            "perr": "perr"
-        }
-        
-        # Map comparison types to SQL operators
-        comparison_map = {
-            "greater than": ">",
-            "less than": "<",
-            "equal": "="
-        }
-        
         # Build SQL conditions for each filter
         conditions = []
         for i, filter_dict in enumerate(filter_values):
@@ -279,7 +258,8 @@ class QueryHandlersMixin:
                 print(f"  Filter {i+1}: Incomplete, skipping")
                 continue
             
-            sql_metric = metric_to_sql.get(metric, metric)
+            # Get SQL expression from centralized config
+            sql_metric = METRIC_TO_SQL.get(metric, metric)
             
             # Handle "between" comparison separately
             if comparison == "between":
@@ -291,7 +271,8 @@ class QueryHandlersMixin:
                     print(f"  Filter {i+1}: Invalid 'between' value format, skipping")
                     continue
             else:
-                operator = comparison_map.get(comparison, ">")
+                # Get operator from centralized config
+                operator = COMPARISON_OPERATORS.get(comparison, ">")
                 condition = f"{sql_metric} {operator} {value}"
                 conditions.append(condition)
                 print(f"  Filter {i+1}: {metric} {comparison} {value} -> {condition}")
@@ -439,32 +420,13 @@ class QueryHandlersMixin:
         if agg_metric and agg_metric in df.columns:
             column = agg_metric
             
-            # Create a readable label from the metric name
-            # e.g., "avg_lf" -> "Average Loss Factor", "max_qerr" -> "Maximum Q-Error"
-            metric_labels = {
-                "avg_lf": "Average Loss Factor",
-                "median_lf": "Median Loss Factor",
-                "max_lf": "Maximum Loss Factor",
-                "min_lf": "Minimum Loss Factor",
-                "avg_qerr": "Average Q-Error",
-                "median_qerr": "Median Q-Error",
-                "max_qerr": "Maximum Q-Error",
-                "min_qerr": "Minimum Q-Error",
-                "avg_perr": "Average P-Error",
-                "median_perr": "Median P-Error",
-                "max_perr": "Maximum P-Error",
-                "min_perr": "Minimum P-Error",
-                # Raw metrics for query mode
-                "lf": "Loss Factor",
-                "qerr": "Q-Error",
-                "perr": "P-Error"
-            }
-            y_label = metric_labels.get(agg_metric, agg_metric)
+            # Get readable label from centralized METRIC_LABELS config
+            y_label = METRIC_LABELS.get(agg_metric, agg_metric)
             
             # Handle Box Plot differently - use ALL data, not sorted/filtered
             if plot_type == "Box Plot":
                 # Build x-axis label from explicitly selected config parameters
-                x_axis_label = self._build_config_params_label(config_params)
+                x_axis_label = build_config_params_label(config_params)
                 title = f"Box Plot: {y_label}"
                 
                 # Use all values for box plot (no sorting/filtering)
@@ -536,57 +498,6 @@ class QueryHandlersMixin:
         plt.close(fig)  # Close the figure to free memory
         print("DEBUG: display_plot_in_frame completed")
     
-    def _build_config_params_label(self, config_params):
-        """
-        Build a label string from explicitly selected configuration parameters.
-        Only includes parameters that were explicitly chosen by the user.
-        
-        Args:
-            config_params (dict): Dictionary with keys 'pg', 'cp', 'bpc', 'cf', 'qg'
-                                  each containing a list of selected values
-        
-        Returns:
-            str: Formatted label string for x-axis
-        """
-        if not config_params:
-            return "All Configurations"
-        
-        label_parts = []
-        
-        # Plan Generator
-        pg = config_params.get('pg', [])
-        if pg and len(pg) > 0:
-            label_parts.append(f"PG: {', '.join(pg)}")
-        
-        # Cardinality Provider
-        cp = config_params.get('cp', [])
-        if cp and len(cp) > 0:
-            label_parts.append(f"CP: {', '.join(cp)}")
-        
-        # Build Plan Class
-        bpc = config_params.get('bpc', [])
-        if bpc and len(bpc) > 0:
-            label_parts.append(f"BPC: {', '.join(bpc)}")
-        
-        # Query Graph (for query mode)
-        qg = config_params.get('qg', [])
-        if qg and len(qg) > 0:
-            label_parts.append(f"Query: {', '.join(qg)}")
-        
-        # Cost Functions (from nested dict)
-        cf = config_params.get('cf', {})
-        if cf:
-            for cf_key, cf_values in cf.items():
-                if cf_values and len(cf_values) > 0:
-                    # Format the cost function name nicely
-                    cf_name = cf_key.replace('bpi_cf_', '').replace('wp_cf_', '').replace('_', ' ').title()
-                    label_parts.append(f"{cf_name}: {', '.join(cf_values)}")
-        
-        if label_parts:
-            return '\n'.join(label_parts)
-        else:
-            return "All Configurations"
-
     def _export_to_excel(self, columns, data, params_summary):
         """Export treeview data to Excel"""
         import pandas as pd

@@ -1,66 +1,20 @@
 # plotting.py
-# This file contains plotting functionality using matplotlib
+"""
+Plotting Module
+Contains plotting functionality using matplotlib.
+Uses centralized configuration from db.db_config for all metric labels and display names.
+"""
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 from plotting.style_plot import get_color_palette, apply_plot_style
+from db.db_config import METRIC_LABELS
+from utils import build_config_params_label
 
 
 # ======================== PLOT CONFIGURATION MAPPINGS ========================
-
-def _build_config_params_label_for_plot(config_params):
-    """
-    Build a label string from explicitly selected configuration parameters.
-    Only includes parameters that were explicitly chosen by the user.
-    
-    Args:
-        config_params (dict): Dictionary with keys 'pg', 'cp', 'bpc', 'cf', 'qg'
-                              each containing a list of selected values
-    
-    Returns:
-        str: Formatted label string for x-axis
-    """
-    if not config_params:
-        return "All Configurations"
-    
-    label_parts = []
-    
-    # Plan Generator
-    pg = config_params.get('pg', [])
-    if pg and len(pg) > 0:
-        label_parts.append(f"PG: {', '.join(pg)}")
-    
-    # Cardinality Provider
-    cp = config_params.get('cp', [])
-    if cp and len(cp) > 0:
-        label_parts.append(f"CP: {', '.join(cp)}")
-    
-    # Build Plan Class
-    bpc = config_params.get('bpc', [])
-    if bpc and len(bpc) > 0:
-        label_parts.append(f"BPC: {', '.join(bpc)}")
-    
-    # Query Graph (for query mode)
-    qg = config_params.get('qg', [])
-    if qg and len(qg) > 0:
-        label_parts.append(f"Query: {', '.join(qg)}")
-    
-    # Cost Functions (from nested dict)
-    cf = config_params.get('cf', {})
-    if cf:
-        for cf_key, cf_values in cf.items():
-            if cf_values and len(cf_values) > 0:
-                # Format the cost function name nicely
-                cf_name = cf_key.replace('bpi_cf_', '').replace('wp_cf_', '').replace('_', ' ').title()
-                label_parts.append(f"{cf_name}: {', '.join(cf_values)}")
-    
-    if label_parts:
-        return '\n'.join(label_parts)
-    else:
-        return "All Configurations"
-
 
 def get_plot_config(y_axis, metric=None, top_n=5):
     """
@@ -447,7 +401,7 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
         y_label: Y-axis label
         colors: List of colors to use
     """
-    if x_col == "Configuration Parameters":
+    if x_col == "Configuration Parameters" or x_col == "Query Graph: ps_qg":
         # Use index for x-values and add configuration labels
         x_values = range(len(df))
         x_axis_label = "Configuration Parameters"
@@ -455,6 +409,11 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
         # Create multi-line labels
         config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
                       'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+        
+        # Add ps_qg at the top if in query mode
+        if x_col == "Query Graph: ps_qg":
+            config_cols = ['ps_qg'] + config_cols
+        
         x_labels = []
         for idx, row in df.iterrows():
             label_parts = []
@@ -464,12 +423,12 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
                     col_display = col.replace('pg_name', 'PG').replace('cp_name', 'CP') \
                                     .replace('bpc_name', 'BP').replace('bpi_cf_join_bundle', 'Join Bundle') \
                                     .replace('bpi_cf_mat', 'Mat').replace('bpi_cf_concat', 'Concat') \
-                                    .replace('wp_cf_host_id', 'Host ID')
+                                    .replace('wp_cf_host_id', 'Host ID').replace('ps_qg', 'Query')
                     label_parts.append(f"{col_display}: {value}")
             x_labels.append('\n'.join(label_parts))
         
         ax.set_xticks(x_values)
-        ax.set_xticklabels(x_labels, rotation=0, ha='center', fontsize=7)
+        ax.set_xticklabels(x_labels, rotation=0, ha='center', fontsize=7, multialignment='left')
         
     elif x_col and x_col in df.columns:
         x_values = df[x_col]
@@ -551,31 +510,13 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
         # We have a valid metric - create the plot
         column = agg_metric
         
-        # Create a readable label from the metric name
-        metric_labels = {
-            "avg_lf": "Average Loss Factor",
-            "median_lf": "Median Loss Factor",
-            "max_lf": "Maximum Loss Factor",
-            "min_lf": "Minimum Loss Factor",
-            "avg_qerr": "Average Q-Error",
-            "median_qerr": "Median Q-Error",
-            "max_qerr": "Maximum Q-Error",
-            "min_qerr": "Minimum Q-Error",
-            "avg_perr": "Average P-Error",
-            "median_perr": "Median P-Error",
-            "max_perr": "Maximum P-Error",
-            "min_perr": "Minimum P-Error",
-            # Raw metrics for query mode
-            "lf": "Loss Factor",
-            "qerr": "Q-Error",
-            "perr": "P-Error"
-        }
-        y_label = metric_labels.get(agg_metric, agg_metric)
+        # Get readable label from centralized METRIC_LABELS config
+        y_label = METRIC_LABELS.get(agg_metric, agg_metric)
         
         # Handle Box Plot differently - use ALL data
         if plot_type == "Box Plot":
-            # Build x-axis label from config params
-            x_axis_label = _build_config_params_label_for_plot(config_params)
+            # Build x-axis label from config params using shared utility
+            x_axis_label = build_config_params_label(config_params)
             title = f"Box Plot: {y_label}"
             
             # Use all values for box plot

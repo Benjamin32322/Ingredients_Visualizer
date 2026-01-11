@@ -601,7 +601,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         # "-" button to remove last filter row
         delete_button = ttk.Button(
             buttons_frame,
-            text="− Remove Last",
+            text="− Remove Filter",
             command=self.remove_last_filter_row,
             width=15
         )
@@ -1040,76 +1040,6 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         """Update the status message in the footer"""
         if hasattr(self, 'status_label'):
             self.status_label.config(text=message)
-
-# ------------------------ RUN-METHODE --------------------------------------------------------------
-    def run(self):
-        self.mainloop()
-
-        
-        selected_pg = self.ms_plan_generator.get_selected()
-        selected_cp = self.ms_cardinality_provider.get_selected()
-        selected_cf = self.msplus_cost_function.get_selected()
-
-        pg_filter = build_filter("pg_name", selected_pg)
-        cp_filter = build_filter("cp_name", selected_cp)
-        cf_filter = build_cost_filters(selected_cf)
-        
-        filters = {
-            "PG_FILTER": pg_filter,
-            "CP_FILTER": cp_filter
-        }
-        filters.update(cf_filter)
-        columns, result = execute_query(1, filters=filters)
-
-        plot_treeview(columns, result)
-        
-        # Update status and restore focus
-        self.update_status(f"Loss Factor query executed - {len(result)} results found")
-        self.after(100, self.restore_entry_focus)
-    
-    def execute_q_error(self):
-        selected_pg = self.ms_plan_generator.get_selected()
-        selected_cp = self.ms_cardinality_provider.get_selected()
-        selected_cf = self.msplus_cost_function.get_selected()
-
-        pg_filter = build_filter("pg_name", selected_pg)
-        cp_filter = build_filter("cp_name", selected_cp)
-        cf_filter = build_cost_filters(selected_cf)
-        
-        filters = {
-            "PG_NAME_FILTER": pg_filter,
-            "CP_NAME_FILTER": cp_filter
-        }
-        filters.update(cf_filter)
-        columns, result = execute_query(3, filters=filters)
-
-        plot_treeview(columns, result)
-        
-        # Update status and restore focus
-        self.update_status(f"Q-Error analysis executed - {len(result)} results found")
-        self.after(100, self.restore_entry_focus)
-
-    def execute_p_error(self):
-        selected_pg = self.ms_plan_generator.get_selected()
-        selected_cp = self.ms_cardinality_provider.get_selected()
-        selected_cf = self.msplus_cost_function.get_selected()
-
-        pg_filter = build_filter("pg_name", selected_pg)
-        cp_filter = build_filter("cp_name", selected_cp)
-        cf_filter = build_cost_filters(selected_cf)
-        
-        filters = {
-            "PG_NAME_FILTER": pg_filter,
-            "CP_NAME_FILTER": cp_filter
-        }
-        filters.update(cf_filter)
-        columns, result = execute_query(4, filters=filters)
-
-        plot_treeview(columns, result)
-        
-        # Update status and restore focus
-        self.update_status(f"P-Error analysis executed - {len(result)} results found")
-        self.after(100, self.restore_entry_focus)
     
     def restore_entry_focus(self):
         """Restore focus capabilities to Entry widgets after other operations"""
@@ -1189,7 +1119,12 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                     print(f"Filter row {i+1}: {filter_dict}")
         
         return filters
-    
-# ------------------------ RUN-METHODE --------------------------------------------------------------
+
+
+# =============================================================================
+# RUN METHOD
+# =============================================================================
+
     def run(self):
+        """Start the main application loop."""
         self.mainloop()
