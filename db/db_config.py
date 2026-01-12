@@ -3,6 +3,9 @@
 # All database column names, table names, SQL placeholders, and mappings are defined here.
 # If column/parameter names in the database change, update them ONLY in this file.
 
+
+# WICHTIG: FÜR NEUE DATENBANK-VERSIONEN ANPASSEN!
+
 # =============================================================================
 # TABLE NAMES
 # =============================================================================
@@ -48,7 +51,7 @@ COLUMNS = {
 }
 
 # =============================================================================
-# SQL FILTER PLACEHOLDERS - Used in .sql template files
+# SQL FILTER PLACEHOLDERS - Used in .sql files
 # =============================================================================
 SQL_PLACEHOLDERS = {
     "PG_NAME_FILTER": "{PG_NAME_FILTER}",
@@ -79,6 +82,25 @@ FILTER_KEY_MAP = {
     "DETAIL_METRIC_FILTER": "DETAIL_METRIC_FILTER",
     "ANALYSIS_TYPE": "ANALYSIS_TYPE",
 }
+# =============================================================================
+# FETCHING THE VALUES FOR THE DROPDOWNS IN THE UI
+# =============================================================================
+DROPDOWN_CONFIGS = {
+    "plan_generator": {"table": "plan_generator", "column": "pg_name"},
+    "cardinality_provider": {"table": "card_provider", "column": "cp_name"},
+    "build_plan_class": {"table": "build_plan_class", "column": "bpc_name"},
+    "query_selection": {"table": "query_graph", "column": "qg_name"},
+    "cf_mat": {"table": "build_plan_instance", "column": "bpi_cf_mat"},
+    "cf_concat": {"table": "build_plan_instance", "column": "bpi_cf_concat"},
+    "cf_join_bundle": {"table": "build_plan_instance", "column": "bpi_cf_join_bundle"},
+    "cf_host_id": {"table": "work_package", "column": "wp_cf_host_id"},
+}
+
+# ENDE - AB HIER MUSS (WAHRSCHEINLICH) NICHTS MEHR ANGEPASST WERDEN
+
+
+
+
 
 # =============================================================================
 # METRIC LABELS - Display names for metrics in UI and plots
@@ -204,16 +226,3 @@ CONFIG_PARAM_DISPLAY = {
     "ps_qg": "Query",
 }
 
-# =============================================================================
-# DROPDOWN CONFIGURATIONS - Table and column for each dropdown
-# =============================================================================
-DROPDOWN_CONFIGS = {
-    "plan_generator": {"table": "plan_generator", "column": "pg_name"},
-    "cardinality_provider": {"table": "card_provider", "column": "cp_name"},
-    "build_plan_class": {"table": "build_plan_class", "column": "bpc_name"},
-    "query_selection": {"table": "query_graph", "column": "qg_name"},
-    "cf_mat": {"table": "build_plan_instance", "column": "bpi_cf_mat"},
-    "cf_concat": {"table": "build_plan_instance", "column": "bpi_cf_concat"},
-    "cf_join_bundle": {"table": "build_plan_instance", "column": "bpi_cf_join_bundle"},
-    "cf_host_id": {"table": "work_package", "column": "wp_cf_host_id"},
-}

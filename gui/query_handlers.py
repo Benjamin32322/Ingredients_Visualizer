@@ -163,6 +163,14 @@ class QueryHandlersMixin:
                 # Aggregated mode - use selected aggregation
                 selected_agg_metrics = self.ms_agg_metric.get_selected()
                 agg_metric = selected_agg_metrics[0] if selected_agg_metrics and len(selected_agg_metrics) > 0 else None
+                
+                # Validation: Check if aggregation is required but not selected
+                # The aggregation popover is enabled when its button state is 'normal'
+                agg_is_enabled = str(self.ms_agg_metric.button.cget('state')) == 'normal'
+                if not agg_metric and agg_is_enabled:
+                    self.update_status("Please select an Aggregation when using the Plotting functionality")
+                    self.after(100, self.restore_entry_focus)
+                    return
             
             # Get metric selection (Highest/Lowest)
             selected_metrics = self.ms_metric.get_selected()
