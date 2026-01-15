@@ -134,12 +134,15 @@ METRIC_TO_SQL = {
     "avg_lf": f"AVG({COLUMNS['loss_factor']})",
     "median_lf": f"MEDIAN({COLUMNS['loss_factor']})",
     "max_lf": f"MAX({COLUMNS['loss_factor']})",
+    "min_lf": f"MIN({COLUMNS['loss_factor']})",
     "avg_qerr": f"AVG({COLUMNS['q_error']})",
     "median_qerr": f"MEDIAN({COLUMNS['q_error']})",
     "max_qerr": f"MAX({COLUMNS['q_error']})",
+    "min_qerr": f"MIN({COLUMNS['q_error']})",
     "avg_perr": f"AVG({COLUMNS['p_error']})",
     "median_perr": f"MEDIAN({COLUMNS['p_error']})",
     "max_perr": f"MAX({COLUMNS['p_error']})",
+    "min_perr": f"MIN({COLUMNS['p_error']})",
     
     # Raw metrics for single query mode (direct column aliases)
     "lf": "lf",
@@ -205,9 +208,9 @@ AGGREGATION_METRICS = {
 
 # Filter metrics by mode
 FILTER_METRICS_AGGREGATED = [
-    "avg_lf", "median_lf", "max_lf",
-    "avg_qerr", "median_qerr", "max_qerr",
-    "avg_perr", "median_perr", "max_perr"
+    "avg_lf", "median_lf", "max_lf", "min_lf",
+    "avg_qerr", "median_qerr", "max_qerr", "min_qerr",
+    "avg_perr", "median_perr", "max_perr", "min_perr"
 ]
 
 FILTER_METRICS_SINGLE_QUERY = ["lf", "qerr", "perr"]

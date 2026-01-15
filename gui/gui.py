@@ -629,7 +629,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             all_metrics = ["lf", "qerr", "perr"]
         else:
             # Aggregated mode - use aggregated metrics
-            all_metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
+            all_metrics = ["avg_lf", "median_lf", "max_lf", "min_lf", "avg_qerr", "median_qerr", "max_qerr", "min_qerr", "avg_perr", "median_perr", "max_perr", "min_perr"]
         
         metric_select = PopoverMultiSelect(
             metric_frame,
@@ -1026,7 +1026,7 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             metrics = ["lf", "qerr", "perr"]
         else:
             # Aggregated mode - use aggregated metrics
-            metrics = ["avg_lf", "median_lf", "max_lf", "avg_qerr", "median_qerr", "max_qerr", "avg_perr", "median_perr", "max_perr"]
+            metrics = ["avg_lf", "median_lf", "max_lf", "min_lf", "avg_qerr", "median_qerr", "max_qerr", "min_qerr", "avg_perr", "median_perr", "max_perr", "min_perr"]
         
         # Update available metrics in all filter rows
         if hasattr(self, 'filter_rows'):
