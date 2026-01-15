@@ -9,9 +9,54 @@ from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
+import numpy as np
 from plotting.style_plot import get_color_palette, apply_plot_style
 from db.db_config import METRIC_LABELS
 from utils import build_config_params_label
+
+
+# ======================== HELPER FUNCTIONS ========================
+
+def should_use_log_scale(y_col):
+    """
+    Determine if logarithmic scale should be used based on the metric column.
+    Q-Error and P-Error metrics can have extremely large values (e.g., 1e+38)
+    which require logarithmic scaling for proper visualization.
+    
+    Args:
+        y_col (str): The column name for the y-axis metric
+    
+    Returns:
+        bool: True if log scale should be used, False otherwise
+    """
+    if y_col is None:
+        return False
+    y_col_lower = y_col.lower()
+    return 'qerr' in y_col_lower or 'perr' in y_col_lower
+
+
+def format_value_label(value, use_log_scale=False):
+    """
+    Format a value for display on a plot.
+    Uses scientific notation for very large numbers.
+    
+    Args:
+        value: The numeric value to format
+        use_log_scale (bool): Whether log scale is being used
+    
+    Returns:
+        str: Formatted string representation of the value
+    """
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return "N/A"
+    
+    abs_value = abs(value)
+    
+    # Use scientific notation for very large or very small numbers
+    if abs_value >= 1e6 or (abs_value > 0 and abs_value < 0.01):
+        return f'{value:.2e}'
+    else:
+        return f'{value:.2f}'
 
 
 # ======================== PLOT CONFIGURATION MAPPINGS ========================
@@ -123,8 +168,15 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
     
     y_values = df[y_col].tolist()
     
+    # Check if log scale should be used for this metric
+    use_log = should_use_log_scale(y_col)
+    
     # Create bars with different colors
     bars = ax.bar(x_positions, y_values, color=colors[:len(df)], width=0.6)
+    
+    # Apply logarithmic scale if needed (for Q-Error, P-Error)
+    if use_log and any(v > 0 for v in y_values):
+        ax.set_yscale('log')
     
     # Set x-axis labels
     ax.set_xticks(x_positions)
@@ -142,8 +194,9 @@ def create_bar_chart(ax, df, x_col, y_col, title, y_label, colors):
     # Add value labels on top of bars
     for i, bar in enumerate(bars):
         height = bar.get_height()
+        label = format_value_label(height, use_log)
         ax.text(bar.get_x() + bar.get_width()/2., height,
-                f'{height:.2f}',
+                label,
                 ha='center', va='bottom', fontsize=10, fontweight='bold')
     
     # Apply custom styling
@@ -218,6 +271,13 @@ def create_box_plot(ax, df, x_col, y_col, title, y_label, colors):
         bp['boxes'][0].set_alpha(0.7)
         ax.set_xlabel("", fontsize=12, fontweight='bold')
     
+    # Check if log scale should be used for this metric
+    use_log = should_use_log_scale(y_col)
+    if use_log:
+        y_values = df[y_col].dropna().tolist()
+        if any(v > 0 for v in y_values):
+            ax.set_yscale('log')
+    
     # Styling
     ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
@@ -291,16 +351,25 @@ def create_box_plot_single(ax, df, y_col, title, y_label, x_label, colors):
         flier.set_markersize(6)
         flier.set_alpha(0.7)
     
+    # Check if log scale should be used for this metric
+    use_log = should_use_log_scale(y_col)
+    if use_log and any(v > 0 for v in values):
+        ax.set_yscale('log')
+    
     # Calculate and display statistics
-    import numpy as np
     q1 = np.percentile(values, 25)
     median = np.median(values)
     q3 = np.percentile(values, 75)
     mean = np.mean(values)
     iqr = q3 - q1
     
-    # Add statistics text box
-    stats_text = f"n={len(values)}\nMedian={median:.2f}\nMean={mean:.2f}\nQ1={q1:.2f}\nQ3={q3:.2f}\nIQR={iqr:.2f}"
+    # Add statistics text box with proper formatting for large numbers
+    stats_text = (f"n={len(values)}\n"
+                  f"Median={format_value_label(median, use_log)}\n"
+                  f"Mean={format_value_label(mean, use_log)}\n"
+                  f"Q1={format_value_label(q1, use_log)}\n"
+                  f"Q3={format_value_label(q3, use_log)}\n"
+                  f"IQR={format_value_label(iqr, use_log)}")
     # Use color from palette for the statistics box background
     stats_box_color = colors[6] if len(colors) > 6 else colors[0]
     props = dict(boxstyle='round', facecolor=stats_box_color, alpha=0.3, edgecolor=colors[1] if len(colors) > 1 else colors[0])
@@ -372,10 +441,17 @@ def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
     
     y_values = df[y_col]
     
+    # Check if log scale should be used for this metric
+    use_log = should_use_log_scale(y_col)
+    
     # Create scatter plot with gradient colors
     scatter = ax.scatter(x_values, y_values, c=range(len(df)), 
                         cmap=plt.cm.colors.ListedColormap(colors[:len(df)]),
                         s=100, alpha=0.7, edgecolors='black', linewidth=1.5)
+    
+    # Apply logarithmic scale if needed (for Q-Error, P-Error)
+    if use_log and any(v > 0 for v in y_values):
+        ax.set_yscale('log')
     
     # Styling
     ax.set_xlabel(x_axis_label if x_col != "Configuration Parameters" else x_axis_label, 
@@ -439,14 +515,22 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
     
     y_values = df[y_col]
     
+    # Check if log scale should be used for this metric
+    use_log = should_use_log_scale(y_col)
+    
     # Create line plot
     ax.plot(x_values, y_values, color=colors[0], linewidth=2.5, marker='o', 
             markersize=8, markerfacecolor=colors[1], markeredgecolor='black', 
             markeredgewidth=1.5)
     
-    # Add value labels at each point
+    # Apply logarithmic scale if needed (for Q-Error, P-Error)
+    if use_log and any(v > 0 for v in y_values):
+        ax.set_yscale('log')
+    
+    # Add value labels at each point with proper formatting
     for i, (x, y) in enumerate(zip(x_values, y_values)):
-        ax.text(x, y, f'{y:.2f}', ha='center', va='bottom', 
+        label = format_value_label(y, use_log)
+        ax.text(x, y, label, ha='center', va='bottom', 
                 fontsize=9, fontweight='bold')
     
     # Styling
