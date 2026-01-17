@@ -30,6 +30,12 @@ class QueryHandlersMixin:
         # Get user selections
         selected_queries = self.ms_query_selection.get_selected()
         selected_methods = self.ms_analysis_parameter.get_selected()
+        selected_plot_types = self.ms_plot_type.get_selected()
+        
+        # Validate: Analysis Parameter is mandatory
+        if not selected_methods or len(selected_methods) == 0:
+            self.update_status("⚠️ Error: Please select an Analysis Parameter (Loss Factor / Q-Error / P-Error)")
+            return
         
         # Determine analysis type
         if "Loss Factor Analysis" in selected_methods:
@@ -39,7 +45,9 @@ class QueryHandlersMixin:
         elif "P-Error Analysis" in selected_methods:
             analysis_type = "P-Error"
         else:
-            analysis_type = "Loss Factor"  # Default
+            # Should not reach here due to validation above, but keep as safety
+            self.update_status("⚠️ Error: Please select a valid Analysis Parameter")
+            return
         
         print(f"  Selected Analysis: {analysis_type}")
         print(f"  Selected Queries: {selected_queries}")
