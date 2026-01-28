@@ -474,6 +474,19 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
         self.plot_number_entry.bind("<FocusIn>", self.on_entry_focus)
         self.plot_number_entry.bind("<KeyPress>", lambda e: self.ensure_entry_focus(e))
         
+        # Split Box Plot data section (initially hidden)
+        self.box_plot_config_label = ttk.Label(self.second_scrollable_frame, text="📦 * Split Box Plot data:", font=("Arial", 10, "bold"))
+        
+        self.ms_box_plot_config = PopoverMultiSelect(
+            self.second_scrollable_frame,
+            header="* Select Split Option",
+            items=["Plan Generator", "Cardinality Provider", "Build Plan", "Mat", "Concat", "Join Bundle", "Host Id"],
+            width=35
+        )
+        
+        # Initially hide the box plot config (will be shown when Box Plot is selected)
+        # Don't pack them initially - they'll be shown/hidden in update_plot_type_dependent_controls
+        
     # ------------------------------ Detail Filters Section --------------------------------------------------------
 
     def build_third_frame(self):
@@ -936,7 +949,8 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
                     self.current_results_data.get('agg_metric'),
                     self.current_results_data.get('metric'),
                     self.current_results_data.get('plot_number', 5),
-                    self.current_results_data.get('config_params')
+                    self.current_results_data.get('config_params'),
+                    self.current_results_data.get('box_plot_split')
                 )
         else:
             self.update_status("No results available. Execute a query first.")
@@ -1007,17 +1021,48 @@ class GUI(ResponsivenessMixin, QueryHandlersMixin, tk.Tk):
             self.ms_agg_metric._var.set(self.ms_agg_metric._header)
         
         if selected_plot_types and "Box Plot" in selected_plot_types:
-            # Box Plot selected - disable Metric popover and number entry
+            # Box Plot selected - disable Metric popover only (keep number entry for max boxes)
             self.ms_metric.button.config(state="disabled")
             self.ms_metric.button.config(style="Disabled.TButton")
             # Reset to default header when disabled
             self.ms_metric._var.set(self.ms_metric._header)
-            self.plot_number_entry.config(state="disabled")
+            # Keep number entry enabled for Box Plot (limits max number of boxes)
+            
+            # Show Split Box Plot data popover
+            self.box_plot_config_label.pack(anchor="w", pady=(10, 2))
+            self.ms_box_plot_config.pack(fill="x", pady=(0, 10))
         else:
             # Other plot types - enable Metric popover and number entry
             self.ms_metric.button.config(state="normal")
             self.ms_metric.button.config(style="TButton")
             self.plot_number_entry.config(state="normal")
+            
+            # Hide Box Plot Configuration
+            self.box_plot_config_label.pack_forget()
+            self.ms_box_plot_config.pack_forget()
+    
+    def get_box_plot_split_config(self):
+        """Get the current box plot split configuration"""
+        selected = self.ms_box_plot_config.get_selected()
+        if not selected:
+            return None
+        
+        # Map selection to database column name
+        split_mapping = {
+            "Plan Generator": "pg_name",
+            "Cardinality Provider": "cp_name",
+            "Build Plan": "bpc_name",
+            "Mat": "bpi_cf_mat",
+            "Concat": "bpi_cf_concat",
+            "Join Bundle": "bpi_cf_join_bundle",
+            "Host Id": "wp_cf_host_id"
+        }
+        
+        # Return the first selected split option's column name
+        for sel in selected:
+            if sel in split_mapping:
+                return split_mapping[sel]
+        return None
     
     def update_filter_row_metrics_for_query_mode(self, query_mode=False):
         """Update available metrics in filter rows based on query selection mode"""

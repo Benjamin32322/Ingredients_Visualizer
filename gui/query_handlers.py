@@ -188,8 +188,18 @@ class QueryHandlersMixin:
             plot_number_str = self.plot_number_var.get().strip()
             plot_number = int(plot_number_str) if plot_number_str and plot_number_str.isdigit() else 5
             
+            # Get box plot split configuration (if Box Plot is selected)
+            box_plot_split = None
+            if plot_type == "Box Plot":
+                box_plot_split = self.get_box_plot_split_config()
+                # Validate: Box Plot split selection is mandatory
+                if not box_plot_split:
+                    self.update_status("⚠️ Please select a Split Option for Box Plot")
+                    self.after(100, self.restore_entry_focus)
+                    return
+            
             # Display plot in results frame with aggregation metric and config params
-            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, agg_metric, metric, plot_number, config_params)
+            self.display_plot_in_frame(columns, result, params_summary, plot_type, x_axis, y_axis, agg_metric, metric, plot_number, config_params, box_plot_split)
         else:
             # No plot type selected, show treeview (table) in results frame
             self.display_treeview_in_frame(columns, result, params_summary)
@@ -374,16 +384,16 @@ class QueryHandlersMixin:
         print(f"DEBUG: Treeview size: {tree.winfo_width()}x{tree.winfo_height()}")
         print("DEBUG: display_treeview_in_frame completed")
     
-    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5, config_params=None):
+    def display_plot_in_frame(self, columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5, config_params=None, box_plot_split=None):
         """Display plot in the results frame"""
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from plotting.plotting import get_plot_config, create_bar_chart, create_box_plot, create_box_plot_single, create_scatter_plot, create_line_graph
+        from plotting.plotting import get_plot_config, create_bar_chart, create_box_plot, create_box_plot_single, create_box_plot_split, create_scatter_plot, create_line_graph
         import pandas as pd
         import tkinter as tk
         from tkinter import ttk
         
-        print(f"DEBUG: display_plot_in_frame called - plot_type: {plot_type}, agg_metric: {agg_metric}")
+        print(f"DEBUG: display_plot_in_frame called - plot_type: {plot_type}, agg_metric: {agg_metric}, box_plot_split: {box_plot_split}")
         
         # Store current results for fullscreen
         self.current_results_data = {
@@ -397,7 +407,8 @@ class QueryHandlersMixin:
             'agg_metric': agg_metric,
             'metric': metric,
             'plot_number': plot_number,
-            'config_params': config_params
+            'config_params': config_params,
+            'box_plot_split': box_plot_split
         }
         
         # Clear the results container
@@ -431,8 +442,13 @@ class QueryHandlersMixin:
                 x_axis_label = build_config_params_label(config_params)
                 title = f"Box Plot: {y_label}"
                 
-                # Use all values for box plot (no sorting/filtering)
-                create_box_plot_single(ax, df, column, title, y_label, x_axis_label, colors)
+                # Check if split configuration is provided
+                if box_plot_split and box_plot_split in df.columns:
+                    # Use split box plot function with max_boxes limit
+                    create_box_plot_split(ax, df, column, box_plot_split, title, y_label, colors, max_boxes=plot_number)
+                else:
+                    # Use all values for single box plot (no sorting/filtering)
+                    create_box_plot_single(ax, df, column, title, y_label, x_axis_label, colors)
             else:
                 # Other plot types - use sorted/filtered data
                 # Determine sort order based on metric selection

@@ -390,6 +390,190 @@ def create_box_plot_single(ax, df, y_col, title, y_label, x_label, colors):
     plt.tight_layout()
 
 
+def create_box_plot_split(ax, df, y_col, split_col, title, y_label, colors, max_boxes=None):
+    """
+    Create a box plot split by a categorical column, showing multiple boxes.
+    Each unique value in split_col creates a separate box.
+    
+    Args:
+        ax: Matplotlib axes object
+        df: DataFrame with ALL data
+        y_col: Column name for the metric values (e.g., 'avg_lf', 'lf')
+        split_col: Column name to split/group by (e.g., 'pg_name', 'cp_name')
+        title: Chart title
+        y_label: Y-axis label (e.g., "Average Loss Factor")
+        colors: List of colors to use
+        max_boxes: Maximum number of boxes to display (None = show all)
+    """
+    # Configuration parameter columns for x-axis labels
+    config_cols = ['pg_name', 'cp_name', 'bpc_name', 'bpi_cf_join_bundle', 
+                  'bpi_cf_mat', 'bpi_cf_concat', 'wp_cf_host_id']
+    
+    # Column display name mapping
+    col_display_map = {
+        'pg_name': 'PG',
+        'cp_name': 'CP', 
+        'bpc_name': 'BP',
+        'bpi_cf_join_bundle': 'Join Bundle',
+        'bpi_cf_mat': 'Mat',
+        'bpi_cf_concat': 'Concat',
+        'wp_cf_host_id': 'Host ID'
+    }
+    
+    # Columns that should include None values (Mat, Concat, Join Bundle)
+    include_none_cols = ['bpi_cf_mat', 'bpi_cf_concat', 'bpi_cf_join_bundle']
+    
+    # Get unique values for the split column
+    # For Mat, Concat, Join Bundle - include None/NaN values
+    if split_col in include_none_cols:
+        # Get all unique values including NaN
+        unique_values = df[split_col].unique()
+        # Convert to list and handle NaN - replace with "None" string for display
+        unique_values_clean = []
+        has_none = False
+        for val in unique_values:
+            if pd.isna(val):
+                has_none = True
+            else:
+                unique_values_clean.append(val)
+        # Sort the non-None values
+        unique_values_clean = sorted(unique_values_clean, key=str)
+        # Add None at the end if present
+        if has_none:
+            unique_values_clean.append(None)  # Keep as None for filtering
+        unique_values = unique_values_clean
+    else:
+        unique_values = df[split_col].dropna().unique()
+        unique_values = sorted(unique_values, key=str)
+    
+    if len(unique_values) == 0:
+        ax.text(0.5, 0.5, f"No data available for splitting by '{split_col}'", 
+                ha='center', va='center', fontsize=12, transform=ax.transAxes)
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+        return
+    
+    # Collect data for each group and build x-axis labels with config params
+    data_groups = []
+    labels = []
+    split_values_for_stats = []  # Store the split values for stats display
+    
+    for val in unique_values:
+        # Filter data for this group
+        if val is None or (isinstance(val, float) and pd.isna(val)):
+            group_df = df[df[split_col].isna()]
+            split_display = "None"
+        else:
+            group_df = df[df[split_col] == val]
+            split_display = str(val)
+        
+        group_data = group_df[y_col].dropna().tolist()
+        if group_data:  # Only include groups with data
+            data_groups.append(group_data)
+            split_values_for_stats.append(split_display)
+            
+            # Build multi-line label with configuration parameters
+            # Get the first row to extract config values (they should be same for the group)
+            first_row = group_df.iloc[0]
+            label_parts = []
+            for col in config_cols:
+                if col in group_df.columns:
+                    value = first_row[col]
+                    # Handle None/NaN values in display
+                    if pd.isna(value):
+                        value = "None"
+                    col_display = col_display_map.get(col, col)
+                    label_parts.append(f"{col_display}: {value}")
+            labels.append('\n'.join(label_parts))
+    
+    if not data_groups:
+        ax.text(0.5, 0.5, "No data available", ha='center', va='center', fontsize=12, transform=ax.transAxes)
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+        return
+    
+    # Apply max_boxes limit if specified
+    if max_boxes is not None and max_boxes > 0 and len(data_groups) > max_boxes:
+        data_groups = data_groups[:max_boxes]
+        labels = labels[:max_boxes]
+        split_values_for_stats = split_values_for_stats[:max_boxes]
+    
+    # Create the box plot with multiple boxes
+    bp = ax.boxplot(data_groups, labels=labels, patch_artist=True, showmeans=True, meanline=True)
+    
+    # Style each box with a different color from the palette
+    for i, patch in enumerate(bp['boxes']):
+        color_idx = i % len(colors)
+        patch.set_facecolor(colors[color_idx])
+        patch.set_alpha(0.7)
+        patch.set_edgecolor('black')
+        patch.set_linewidth(1.5)
+    
+    # Style whiskers
+    for whisker in bp['whiskers']:
+        whisker.set_color('black')
+        whisker.set_linewidth(1.5)
+    
+    # Style caps
+    for cap in bp['caps']:
+        cap.set_color('black')
+        cap.set_linewidth(1.5)
+    
+    # Style median lines
+    for median in bp['medians']:
+        median.set_color('red')
+        median.set_linewidth(2)
+    
+    # Style mean lines
+    for mean in bp['means']:
+        mean.set_color('green')
+        mean.set_linewidth(2)
+        mean.set_linestyle('--')
+    
+    # Style fliers (outliers)
+    for i, flier in enumerate(bp['fliers']):
+        color_idx = i % len(colors)
+        flier.set_marker('o')
+        flier.set_markerfacecolor(colors[color_idx])
+        flier.set_markeredgecolor('black')
+        flier.set_markersize(4)
+        flier.set_alpha(0.6)
+    
+    # Check if log scale should be used for this metric
+    use_log = should_use_log_scale(y_col)
+    all_values = df[y_col].dropna().tolist()
+    if use_log and any(v > 0 for v in all_values):
+        ax.set_yscale('log')
+    
+    # Add statistics summary for each group
+    stats_lines = []
+    for i, data in enumerate(data_groups):
+        # Get the split value from split_values_for_stats
+        split_val = split_values_for_stats[i] if i < len(split_values_for_stats) else f"Group {i+1}"
+        n = len(data)
+        median = np.median(data)
+        mean = np.mean(data)
+        stats_lines.append(f"{split_val}: n={n}, Med={format_value_label(median, use_log)}, Mean={format_value_label(mean, use_log)}")
+    
+    # Only show stats box if not too many groups
+    if len(stats_lines) <= 6:
+        stats_text = '\n'.join(stats_lines)
+        stats_box_color = colors[0] if colors else 'white'
+        props = dict(boxstyle='round', facecolor=stats_box_color, alpha=0.3, edgecolor='black')
+        ax.text(0.98, 0.98, stats_text, transform=ax.transAxes, fontsize=8,
+                verticalalignment='top', horizontalalignment='right', bbox=props)
+    
+    # Labels and title (without "Split by ...")
+    ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
+    ax.set_xlabel("Configuration Parameters", fontsize=12, fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+    
+    # Use smaller font for multi-line x-axis labels
+    ax.tick_params(axis='x', labelsize=7)
+    
+    # Apply custom styling
+    apply_plot_style(ax)
+    plt.tight_layout()
+
+
 def create_scatter_plot(ax, df, x_col, y_col, title, y_label, colors):
     """
     Create a scatter plot
@@ -544,7 +728,7 @@ def create_line_graph(ax, df, x_col, y_col, title, y_label, colors):
     plt.tight_layout()
 
 
-def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5, config_params=None):
+def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_axis=None, agg_metric=None, metric=None, plot_number=5, config_params=None, box_plot_split=None):
     """
     Create a plot visualization window based on the selected plot type
     
@@ -559,6 +743,7 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
         metric (str): Metric selection ("Highest" or "Lowest", optional)
         plot_number (int): Number of data points to display (default: 5)
         config_params (dict): Configuration parameters for box plot x-axis label
+        box_plot_split (str): Column name to split box plot by (e.g., 'pg_name'), or None for single box
     """
     # Create new window
     plot_window = tk.Toplevel()
@@ -603,8 +788,13 @@ def create_plot_window(columns, data, params_summary, plot_type, x_axis=None, y_
             x_axis_label = build_config_params_label(config_params)
             title = f"Box Plot: {y_label}"
             
-            # Use all values for box plot
-            create_box_plot_single(ax, df, column, title, y_label, x_axis_label, colors)
+            # Check if split configuration is provided
+            if box_plot_split and box_plot_split in df.columns:
+                # Use split box plot function with max_boxes limit
+                create_box_plot_split(ax, df, column, box_plot_split, title, y_label, colors, max_boxes=plot_number)
+            else:
+                # Use all values for single box plot
+                create_box_plot_single(ax, df, column, title, y_label, x_axis_label, colors)
         else:
             # Other plot types - use sorted/filtered data
             # Determine sort order based on metric selection
